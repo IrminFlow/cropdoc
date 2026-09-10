@@ -9,9 +9,10 @@ Private source: https://github.com/IrminFlow/cropdoc
 - ESLint, TypeScript, 15 application tests, and a production Next.js build.
 - Six Python CLI tests: optimization/metadata, private configuration, URL validation, quota handling, stable retries, and completed-upload deduplication.
 - Hosted database isolation tests: user RLS, private Storage policies, protected field/function grants, parent-child ownership, deletion denial, budget reservation, concurrent daily limits, duplicate claims, and revoked tokens.
-- Actual Vercel deployment using Node 22.
+- Actual Vercel deployment using Node 22. GitHub CI also passes lint, TypeScript, application tests, Python tests, and the production build.
 - Clerk password login, device-trust email verification, and email-code login with Clerk development test credentials.
 - Live API: missing credentials and malformed images rejected; four-image grouped upload persisted privately; duplicate request reused its inspection; signed image access succeeded; public image access failed; another device could not read the submission; revocation immediately denied access.
+- Live Python CLI: an optimized upload persisted; missing AI configuration returned a failure; rerunning reused the saved idempotency key without creating another inspection. Successful AI-report completion remains unverified.
 - Live Clerk webhook: unsigned deletion rejected; a real signed user-deletion event removed the fixture's Storage objects and database rows.
 - Provider failure, incomplete/malformed report validation, conservative budget reservation, and duplicate processing behavior covered by application tests. These tests do not claim a real AI diagnosis.
 
