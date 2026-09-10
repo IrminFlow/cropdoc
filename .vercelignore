@@ -1,0 +1,9 @@
+.local
+.env*
+.venv
+.git
+supabase
+scripts
+tests
+device-client
+README.md
