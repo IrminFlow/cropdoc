@@ -56,13 +56,16 @@ export async function inspectionView(
       const { data, error } = await identity.db.storage
         .from("crop-images")
         .createSignedUrl(x.path, 300);
+      // Tracking rows can outlive an interrupted upload or partial deletion.
+      // Keep the inspection accessible so its owner can finish cleanup.
+      if (error && ["uploading", "deleting"].includes(item.status)) return null;
       databaseError(error);
       return { id: x.id, url: data!.signedUrl, position: x.position };
     }),
   );
   return {
     ...item,
-    images,
+    images: images.filter((image) => image !== null),
     report: r.data ? validateReport(r.data.report) : null,
     lease_active: new Date(item.lease_until ?? 0).getTime() > Date.now(),
     retryable:

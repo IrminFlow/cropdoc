@@ -2,6 +2,8 @@
 
 Demo URL: https://cropdoc-lilac.vercel.app
 
+See [deployment verification](VERIFICATION.md) for completed checks and the two remaining service-configuration blockers.
+
 A small crop-photo analysis app for Indian growers. Next.js + TypeScript, Clerk, Supabase Postgres/Storage, and the OpenAI Responses API. Includes a Python/USB camera uploader.
 
 ## Run locally

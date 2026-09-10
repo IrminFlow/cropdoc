@@ -23,7 +23,7 @@ vi.mock("openai", () => {
   }
   return { default: Client };
 });
-import { analyzeInspection } from "@/lib/inspections";
+import { analyzeInspection, inspectionView } from "@/lib/inspections";
 import type { Identity } from "@/lib/auth";
 const id = "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa";
 const report = {
@@ -89,6 +89,42 @@ beforeEach(() => {
   mocks.storage.mockResolvedValue({ data: new Blob(["photo"]), error: null });
 });
 describe("analysis lifecycle", () => {
+  it("keeps interrupted uploads accessible when a tracked object is missing", async () => {
+    mocks.from.mockImplementation((table: string) =>
+      query({
+        data:
+          table === "inspections"
+            ? {
+                id,
+                owner_id: "user_test",
+                status: "uploading",
+                lease_until: "2020-01-01T00:00:00Z",
+              }
+            : table === "inspection_images"
+              ? [{ id: "image", path: "user_test/test/0.jpg", position: 0 }]
+              : null,
+        error: null,
+      }),
+    );
+    const interrupted = {
+      ...identity,
+      db: {
+        ...identity.db,
+        storage: {
+          from: () => ({
+            createSignedUrl: async () => ({
+              data: null,
+              error: { message: "Object not found" },
+            }),
+          }),
+        },
+      },
+    } as unknown as Identity;
+    const view = await inspectionView(interrupted, id);
+    expect(view.images).toEqual([]);
+    expect(view.status).toBe("uploading");
+    expect(view.lease_active).toBe(false);
+  });
   it("uses the requested model and saves validated structured output", async () => {
     mocks.parse.mockResolvedValue({
       status: "completed",

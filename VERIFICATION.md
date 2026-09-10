@@ -6,7 +6,7 @@ Private source: https://github.com/IrminFlow/cropdoc
 
 ## Passed
 
-- ESLint, TypeScript, 14 application tests, and a production Next.js build.
+- ESLint, TypeScript, 15 application tests, and a production Next.js build.
 - Six Python CLI tests: optimization/metadata, private configuration, URL validation, quota handling, stable retries, and completed-upload deduplication.
 - Hosted database isolation tests: user RLS, private Storage policies, protected field/function grants, parent-child ownership, deletion denial, budget reservation, concurrent daily limits, duplicate claims, and revoked tokens.
 - Actual Vercel deployment using Node 22.
@@ -24,3 +24,7 @@ Private source: https://github.com/IrminFlow/cropdoc
 Chrome Beta computer automation became stuck on an inaccessible menu, and no Chrome browser extension connection was available. The two account-dashboard settings above could not be completed with the available authenticated tools. No unrelated projects were modified and no upgrades were purchased.
 
 Clerk uses development credentials on the Vercel demo domain. Production auth on an owned domain remains a later setup step. End-to-end AI functionality is not yet verified; the deployment must not be described as a completed production service.
+
+## UI and hardware limits
+
+Desktop welcome, dashboard, login, and upload layouts were inspected. The preview tool could not apply a mobile viewport, so mobile visual verification remains outstanding. The camera test installed OpenCV and attempted capture on the Mac; macOS denied camera authorization. No photo was captured or uploaded. No physical Raspberry Pi or USB camera was available.
