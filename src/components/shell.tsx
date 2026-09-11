@@ -2,66 +2,45 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { UserButton } from "@clerk/nextjs";
-import {
-  LayoutDashboard,
-  ScanLine,
-  Files,
-  Cable,
-  ArrowUpRight,
-} from "lucide-react";
+import { Camera, Files, Settings } from "lucide-react";
 import { Brand } from "./brand";
-const links = [
-  { href: "/dashboard", label: "Overview", icon: LayoutDashboard },
-  { href: "/upload", label: "New inspection", icon: ScanLine },
-  { href: "/reports", label: "My reports", icon: Files },
-  { href: "/devices", label: "Devices", icon: Cable },
-];
 export function Shell({ children }: { children: React.ReactNode }) {
   const path = usePathname();
   return (
-    <div className="app-shell">
-      <aside className="sidebar">
+    <div className="simple-app">
+      <header className="simple-header">
         <Brand />
-        <div className="workspace-label">Your growing space</div>
-        <nav aria-label="Main navigation">
-          {links.map(({ href, label, icon: Icon }) => (
-            <Link
-              key={href}
-              className={`nav-link ${path.startsWith(href) ? "active" : ""}`}
-              href={href}
-            >
-              <Icon size={19} />
-              <span>{label}</span>
-              {path.startsWith(href) && <span className="nav-dot" />}
-            </Link>
-          ))}
-        </nav>
-        <div className="sidebar-bottom">
-          <div className="demo-note">
-            <span className="status-dot" /> Demo workspace
-            <p>
-              Five inspections a day.
-              <br />
-              Every photo stays private.
-            </p>
-          </div>
-          <a href="/devices" className="device-nudge">
-            Connect your camera <ArrowUpRight size={16} />
-          </a>
-        </div>
-      </aside>
-      <div className="main-wrap">
-        <header className="topbar">
-          <span className="topbar-label">A little clarity for every crop.</span>
-          <span className="private-label">Your private workspace</span>
+        <div className="simple-account">
+          <details className="settings-menu">
+            <summary aria-label="More options">
+              <Settings size={22} />
+              <span>More</span>
+            </summary>
+            <div>
+              <Link href="/upload#how-to">How to use</Link>
+              <Link href="/devices">Connect a camera</Link>
+            </div>
+          </details>
           <UserButton />
-        </header>
-        <main className="main-content">{children}</main>
-        <footer className="app-footer">
-          <span>CropDoc</span>
-          <span>Photo-based guidance. Local expertise when it matters.</span>
-        </footer>
-      </div>
+        </div>
+      </header>
+      <nav className="simple-nav" aria-label="Main navigation">
+        <Link
+          href="/upload"
+          aria-current={path === "/upload" ? "page" : undefined}
+        >
+          <Camera size={22} />
+          Check crop
+        </Link>
+        <Link
+          href="/reports"
+          aria-current={path.startsWith("/reports") ? "page" : undefined}
+        >
+          <Files size={22} />
+          My reports
+        </Link>
+      </nav>
+      <main className="simple-main">{children}</main>
     </div>
   );
 }

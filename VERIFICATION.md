@@ -29,3 +29,7 @@ Clerk uses development credentials on the Vercel demo domain. Production auth on
 ## UI and hardware limits
 
 Desktop welcome, dashboard, login, and upload layouts were inspected. The preview tool could not apply a mobile viewport, so mobile visual verification remains outstanding. The camera test installed OpenCV and attempted capture on the Mac; macOS denied camera authorization. No photo was captured or uploaded. No physical Raspberry Pi or USB camera was available.
+
+## Simplified flow update
+
+Direct login, two main navigation choices, optional details, plain-language report labels, larger buttons, and a 20-second silent walkthrough are implemented. Lint, TypeScript, all 15 app tests, and the production build pass. The OpenAI key and Supabase hosted Clerk issuer still require setup; the desktop computer-use connection was unavailable during this update.

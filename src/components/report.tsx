@@ -97,8 +97,7 @@ export function Report({ id }: { id: string }) {
       </Link>
       <div className="page-heading">
         <div>
-          <span className="eyebrow">Your crop assessment</span>
-          <h1>{report?.crop || item.crop_hint || "Crop inspection"}</h1>
+          <h1>{report?.crop || item.crop_hint || "Crop report"}</h1>
           <p>
             {dateLabel(item.created_at)}
             {item.location ? ` · ${item.location}` : ""} · {item.image_count}{" "}
@@ -123,7 +122,7 @@ export function Report({ id }: { id: string }) {
             {item.images.map((im, i) => (
               <img
                 src={im.url}
-                alt={`Crop inspection, view ${i + 1}`}
+                alt={`Crop report, view ${i + 1}`}
                 key={im.id}
               />
             ))}
@@ -137,7 +136,7 @@ export function Report({ id }: { id: string }) {
             <>
               <div className="report-panel-heading">
                 <span>
-                  <CheckCircle2 size={17} /> Assessment saved
+                  <CheckCircle2 size={17} /> Report saved
                 </span>
                 <Badge value={report.severity} />
               </div>
@@ -166,11 +165,8 @@ export function Report({ id }: { id: string }) {
               {busy || (item.status === "analyzing" && !item.retryable) ? (
                 <>
                   <LoaderCircle className="spin" size={32} />
-                  <h2>Taking a closer look.</h2>
-                  <p>
-                    We’re checking the visible signs and preparing your short
-                    report.
-                  </p>
+                  <h2>Checking your crop…</h2>
+                  <p>Please wait. Your report will appear here.</p>
                 </>
               ) : item.status === "uploading" ? (
                 <>
@@ -201,22 +197,21 @@ export function Report({ id }: { id: string }) {
                   <h2>
                     {item.status === "ready"
                       ? "Your photos are ready."
-                      : "Let’s try another look."}
+                      : "The check did not finish."}
                   </h2>
                   <p>
-                    {item.error_message ||
-                      "Start an analysis to get a short crop-health report."}
+                    {item.error_message || "Tap Check crop to see your report."}
                   </p>
                   <button
                     className="button"
                     onClick={() => void analyze(item.status !== "ready")}
                     disabled={busy}
                   >
-                    {item.status === "ready"
-                      ? "Analyze crop"
-                      : "Retry analysis"}
+                    {item.status === "ready" ? "Check crop" : "Try again"}
                   </button>
-                  <span className="fine">Uses one daily analysis attempt.</span>
+                  <span className="fine">
+                    Uses one of your five daily checks.
+                  </span>
                 </>
               )}
             </div>

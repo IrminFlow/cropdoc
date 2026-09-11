@@ -20,7 +20,7 @@ export function Mark() {
 }
 export function Brand() {
   return (
-    <Link className="brand" href="/dashboard">
+    <Link className="brand" href="/upload">
       <Mark />
       <span>
         CropDoc<span className="brand-dot">.</span>

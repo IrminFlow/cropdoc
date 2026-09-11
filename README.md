@@ -6,6 +6,12 @@ See [deployment verification](VERIFICATION.md) for completed checks and the two 
 
 A small crop-photo analysis app for Indian growers. Next.js + TypeScript, Clerk, Supabase Postgres/Storage, and the OpenAI Responses API. Includes a Python/USB camera uploader.
 
+## Simple farmer flow
+
+Opening the app goes straight to sign-in, then **Check crop**. The main navigation has only **Check crop** and **My reports**. Crop name, location, and notes are optional. The grouping choice appears only when more than one photo is selected. Camera-token setup is under **More**. Existing dashboard links redirect to Check crop.
+
+A 20-second silent illustrated walkthrough is available under **How to use**. It loads only when played, includes readable text and captions, and has no audio track. Regenerate it with `node scripts/make-walkthrough.mjs` (requires ffmpeg).
+
 ## Run locally
 
 Requires Node 22+, npm, and Python 3.10+ for the device client.

@@ -2,17 +2,10 @@
 /* eslint-disable @next/next/no-img-element */
 import { useRef, useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import {
-  Camera,
-  UploadCloud,
-  X,
-  ArrowRight,
-  Check,
-  LoaderCircle,
-  ShieldCheck,
-} from "lucide-react";
+import { Camera, UploadCloud, X, ArrowRight, LoaderCircle } from "lucide-react";
 import { api, compressPhoto } from "@/lib/client";
 import { ErrorNotice } from "./common";
+import { HowTo } from "./how-to";
 type Photo = { file: File; url: string; key: string };
 export function Upload() {
   const router = useRouter();
@@ -97,7 +90,7 @@ export function Upload() {
           router.push(`/reports/${inspection.id}?analyze=1`);
           return;
         }
-        setStatus(`Analyzing photo ${index + 1} of ${groups.length}…`);
+        setStatus(`Checking photo ${index + 1} of ${groups.length}…`);
         await api(`/api/inspections/${inspection.id}/analyze`, {
           method: "POST",
         });
@@ -116,18 +109,15 @@ export function Upload() {
     <>
       <div className="page-heading">
         <div>
-          <span className="eyebrow">A closer look</span>
-          <h1>Inspect your crop</h1>
-          <p>
-            Show us what you’re seeing. We’ll help you understand the signs.
-          </p>
+          <h1>Check your crop</h1>
+          <p>Add a photo to find out what may be wrong and what to do.</p>
         </div>
       </div>
-      <div className="upload-layout">
+      <div className="simple-upload">
         <div>
           <section className="panel form-panel">
             <div className="section-heading">
-              <h2>Start with your photos</h2>
+              <h2>Add crop photos</h2>
               <span className="subtle">{photos.length} / 4 photos</span>
             </div>
             <div
@@ -139,15 +129,15 @@ export function Upload() {
               }}
             >
               <UploadCloud size={34} strokeWidth={1.4} />
-              <h3>Bring your crop into focus.</h3>
-              <p>Drop photos here, or choose them from your device.</p>
+              <h3>Take a clear photo of the problem.</h3>
+              <p>Show the affected leaf, fruit, or stem.</p>
               <div className="button-row">
                 <button
                   disabled={busy}
                   className="button secondary"
                   onClick={() => input.current?.click()}
                 >
-                  Choose photos
+                  Add photos
                 </button>
                 <button
                   disabled={busy}
@@ -157,9 +147,7 @@ export function Upload() {
                   <Camera size={17} /> Take a photo
                 </button>
               </div>
-              <span className="fine">
-                JPEG, PNG or WebP · Up to 20 MB before optimization
-              </span>
+              <span className="fine">Up to 4 photos · JPEG, PNG or WebP</span>
               <input
                 ref={input}
                 type="file"
@@ -197,47 +185,46 @@ export function Upload() {
                 ))}
               </div>
             )}
-            <fieldset className="mode-choice">
-              <legend>How should we analyze these?</legend>
-              <label>
-                <input
-                  type="radio"
-                  checked={mode === "group"}
-                  onChange={() => {
-                    setMode("group");
-                    changed();
-                  }}
-                  name="mode"
-                  disabled={busy}
-                />
-                <span>
-                  <strong>One plant, one report</strong>
-                  <small>Combine different views of the same crop.</small>
-                </span>
-              </label>
-              <label>
-                <input
-                  type="radio"
-                  checked={mode === "individual"}
-                  onChange={() => {
-                    setMode("individual");
-                    changed();
-                  }}
-                  name="mode"
-                  disabled={busy}
-                />
-                <span>
-                  <strong>A report for each photo</strong>
-                  <small>Inspect different plants separately.</small>
-                </span>
-              </label>
-            </fieldset>
+            {photos.length > 1 && (
+              <fieldset className="mode-choice">
+                <legend>Are these photos of the same plant?</legend>
+                <label>
+                  <input
+                    type="radio"
+                    checked={mode === "group"}
+                    onChange={() => {
+                      setMode("group");
+                      changed();
+                    }}
+                    name="mode"
+                    disabled={busy}
+                  />
+                  <span>
+                    <strong>Same plant</strong>
+                    <small>Get one report for these photos.</small>
+                  </span>
+                </label>
+                <label>
+                  <input
+                    type="radio"
+                    checked={mode === "individual"}
+                    onChange={() => {
+                      setMode("individual");
+                      changed();
+                    }}
+                    name="mode"
+                    disabled={busy}
+                  />
+                  <span>
+                    <strong>Different plants</strong>
+                    <small>Get a separate report for each photo.</small>
+                  </span>
+                </label>
+              </fieldset>
+            )}
           </section>
-          <section className="panel form-panel">
-            <div className="section-heading">
-              <h2>A little context</h2>
-              <span className="subtle">Optional</span>
-            </div>
+          <details className="panel form-panel extra-details">
+            <summary>Add crop name or other details (optional)</summary>
             <div className="field-grid">
               <label>
                 Crop name
@@ -267,7 +254,7 @@ export function Upload() {
               </label>
             </div>
             <label>
-              What have you noticed?
+              What do you see?
               <textarea
                 disabled={busy}
                 placeholder="e.g. Yellow spots on lower leaves for the past three days."
@@ -280,12 +267,12 @@ export function Upload() {
                 }}
               />
             </label>
-          </section>
+          </details>
           {error && <ErrorNotice message={error} />}
           <div className="upload-submit">
             <span className="fine">
-              {mode === "group" ? 1 : Math.max(1, photos.length)} of your 5
-              daily analysis attempts
+              Uses {mode === "group" ? 1 : Math.max(1, photos.length)} of your 5
+              daily checks
             </span>
             <button
               className="button"
@@ -299,41 +286,21 @@ export function Upload() {
                 </>
               ) : (
                 <>
-                  Analyze{" "}
+                  Check{" "}
                   {mode === "individual" && photos.length > 1
-                    ? "photos"
+                    ? "crops"
                     : "crop"}
                   <ArrowRight size={17} />
                 </>
               )}
             </button>
           </div>
+          <p className="simple-privacy">
+            Your photos are private. AI can be wrong. Ask a local crop expert if
+            the problem is serious.
+          </p>
+          <HowTo />
         </div>
-        <aside className="upload-guide">
-          <div className="guide-icon">
-            <Camera size={28} />
-          </div>
-          <h3>A good photo goes a long way.</h3>
-          <p>Small details help us give you a more useful assessment.</p>
-          {[
-            "Use daylight, without harsh shadows.",
-            "Focus on the affected leaves or fruit.",
-            "Include a wider view of the plant.",
-            "Keep different plants in separate reports.",
-          ].map((t) => (
-            <div className="guide-item" key={t}>
-              <Check size={16} />
-              <span>{t}</span>
-            </div>
-          ))}
-          <div className="privacy-note">
-            <ShieldCheck size={20} />
-            <p>
-              Photos are private. We send optimized copies to OpenAI for
-              analysis, then save the report in your account.
-            </p>
-          </div>
-        </aside>
       </div>
     </>
   );

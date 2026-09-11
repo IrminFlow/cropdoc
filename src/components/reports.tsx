@@ -25,12 +25,11 @@ export function Reports() {
     <>
       <div className="page-heading">
         <div>
-          <span className="eyebrow">Your growing record</span>
           <h1>My reports</h1>
-          <p>Every observation, saved in one private place.</p>
+          <p>Your saved crop photos and care steps.</p>
         </div>
         <Link href="/upload" className="button">
-          <Plus size={17} /> New inspection
+          <Plus size={17} /> Check crop
         </Link>
       </div>
       <section className="panel">
