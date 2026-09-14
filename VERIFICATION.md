@@ -15,13 +15,22 @@ Implemented the Gemini 3.8 Flash Interactions API with inline optimized images, 
 
 ## Account setup and end-to-end status
 
-Analysis remains disabled until the dedicated Google project has been verified without billing and its API key installed. `GEMINI_FREE_TIER_VERIFIED` is an operator assertion, not an ongoing billing monitor. Billing must remain detached.
+The release is deployed from GitHub commit `044a705`; GitHub CI passed. Gemini credentials and the dedicated project ID are installed locally and in Vercel's encrypted Production settings.
 
-The existing Clerk issuer must also be registered in Supabase hosted Authentication → Third-Party Auth: `https://daring-polliwog-7246.clerk.accounts.dev`. The earlier signed-in JWT test failed with `PGRST301 No suitable key was found to decode the JWT`; RLS has not been weakened to work around it.
+Google project `durable-bond-508608-m9` (number `567284979080`) was checked in Google Cloud Billing: **“This project has no billing account.”** Model lookup for `gemini-3.8-flash` returned HTTP 200. A real crop-photo Interactions request returned HTTP 403: **“Your project has been denied access. Please contact support.”** AI Studio lists its billing tier as Unavailable. Analysis remains disabled (`GEMINI_FREE_TIER_VERIFIED=false`) because free inference access could not be verified. No paid fallback or upgrade was attempted.
+
+The Clerk issuer `https://daring-polliwog-7246.clerk.accounts.dev` is now registered with hosted Supabase. Actual Clerk JWT access succeeds. Additional live checks passed:
+
+- Real crop photos uploaded through the web API, grouped and reopened by their owner.
+- Another real Clerk user denied access to the inspection and its private Storage image, both through the web API and directly through Supabase RLS.
+- Duplicate web submission reused the inspection; disabled analysis consumed zero attempts; history stayed accessible.
+- Owner deletion removed photos and records.
+- The deployed Python CLI persisted optimized photos and reused its stable key after the expected AI_CONFIGURATION response.
+- Live device tests again verified malformed-upload rejection, private grouped uploads, duplicate protection, cross-device denial, immediate revocation and signed Clerk deletion-webhook cleanup.
 
 A revocation request was submitted for the exposed OpenAI key. The account UI became inaccessible before its final status could be verified. No OpenAI key is needed by this release.
 
-**No real Gemini report has yet been produced and reopened by its owner. Do not describe deployment as end-to-end complete until that succeeds.** Real single/grouped/uncertain-photo reports and successful Python report completion remain pending service setup.
+**No real Gemini report has yet been produced and reopened by its owner. Do not describe deployment as end-to-end complete until that succeeds.** Real single/grouped/uncertain-photo reports and successful Python report completion are blocked by Google’s project-access denial. A different AI provider would require an explicit product/provider decision and updated disclosures.
 
 ## Earlier live checks
 
