@@ -1,4 +1,5 @@
 import { ZodError } from "zod";
+import { DAILY_CHECKS } from "./limits";
 export class AppError extends Error {
   constructor(
     public code: string,
@@ -9,26 +10,33 @@ export class AppError extends Error {
     super(message);
   }
 }
+// Growers read these, so they use everyday words and say what to do next.
 const messages: Record<string, [number, string]> = {
-  NOT_FOUND: [404, "Report not found."],
+  NOT_FOUND: [404, "This report was not found. It may have been deleted."],
   ACCOUNT_DELETED: [403, "This account has been deleted."],
   TOKEN_REVOKED: [401, "The device token is invalid or revoked."],
   IDEMPOTENCY_CONFLICT: [
     409,
     "This request key was already used for different photos.",
   ],
-  STORAGE_QUOTA: [429, "Delete an older report before uploading more."],
-  BUSY: [429, "Two uploads are already in progress. Wait a moment and retry."],
-  NOT_READY: [409, "The photos are still uploading. Try again shortly."],
+  STORAGE_QUOTA: [
+    429,
+    "You have too many saved reports. Delete an old report to add a new one.",
+  ],
+  BUSY: [
+    429,
+    "Other photos are still being sent. Wait a moment and try again.",
+  ],
+  NOT_READY: [409, "The photos are still being sent. Try again in a moment."],
   DAILY_QUOTA: [
     429,
-    "You have used today’s five analysis attempts. Try again tomorrow (India time).",
+    `You have used all ${DAILY_CHECKS} checks for today. You can check again tomorrow.`,
   ],
   BUDGET_EXHAUSTED: [
     429,
-    "The demo AI budget has been reached. Your saved reports are still available.",
+    "CropDoc cannot check more crops right now. Your saved reports are still here.",
   ],
-  TOKEN_LIMIT: [429, "Revoke an existing token before creating another."],
+  TOKEN_LIMIT: [429, "Remove a device key before making another one."],
 };
 export function databaseError(error: { message: string } | null) {
   if (!error) return;
@@ -42,7 +50,7 @@ export function databaseError(error: { message: string } | null) {
       );
   throw new AppError(
     "DATABASE_ERROR",
-    "The data service could not complete this request. Please retry.",
+    "CropDoc could not open your saved reports just now. Please try again in a moment.",
     503,
   );
 }

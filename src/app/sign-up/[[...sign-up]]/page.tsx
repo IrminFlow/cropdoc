@@ -1,10 +1,11 @@
+import type { Metadata } from "next";
 import { SignUp } from "@clerk/nextjs";
-import { Brand } from "@/components/brand";
+import { AuthPage } from "@/components/auth-page";
+export const metadata: Metadata = { title: "Create account" };
 export default function Page() {
   return (
-    <main className="simple-auth">
-      <Brand />
+    <AuthPage>
       <SignUp fallbackRedirectUrl="/upload" />
-    </main>
+    </AuthPage>
   );
 }

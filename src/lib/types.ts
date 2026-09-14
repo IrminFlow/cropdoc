@@ -1,10 +1,11 @@
 import type { CropReport } from "./report";
+export type InspectionStatus =
+  "uploading" | "ready" | "analyzing" | "complete" | "failed" | "deleting";
 export type Inspection = {
   id: string;
   owner_id: string;
   device_token_id: string | null;
-  status:
-    "uploading" | "ready" | "analyzing" | "complete" | "failed" | "deleting";
+  status: InspectionStatus;
   crop_hint: string;
   location: string;
   notes: string;
@@ -22,3 +23,14 @@ export type InspectionView = Inspection & {
   retryable: boolean;
   lease_active: boolean;
 };
+/** One row of the report history. */
+export type InspectionSummary = Pick<
+  Inspection,
+  "id" | "status" | "crop_hint" | "created_at" | "image_count" | "error_message"
+> & {
+  report: CropReport | null;
+  /** Short-lived signed URL of the first photo, if it is still stored. */
+  thumbnail_url: string | null;
+};
+/** Paid checks used on the current India calendar day. */
+export type DailyUsage = { used: number; limit: number };

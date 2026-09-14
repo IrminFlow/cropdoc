@@ -1,0 +1,337 @@
+.back {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 48px;
+  margin-bottom: 6px;
+  color: var(--ink-2);
+  font-weight: 600;
+  text-decoration: none;
+}
+.back:hover {
+  color: var(--ink);
+}
+.layout {
+  display: grid;
+}
+.content {
+  position: relative;
+  display: grid;
+  align-content: start;
+  gap: 14px;
+  min-width: 0;
+}
+/* On phones the verdict card slides up over the bottom of the photo. */
+.overlap {
+  margin-top: -44px;
+  padding-inline: 8px;
+}
+@media (min-width: 900px) {
+  .layout {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr);
+    align-items: start;
+    gap: 36px;
+  }
+  .photos {
+    position: sticky;
+    top: calc(var(--header-h) + 24px);
+  }
+  .overlap {
+    margin-top: 0;
+    padding-inline: 0;
+  }
+}
+
+.mainPhoto {
+  position: relative;
+  aspect-ratio: 4 / 3;
+  margin: 0;
+  overflow: hidden;
+  border-radius: var(--radius-l);
+  background: var(--surface-2);
+}
+.mainPhoto img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.thumbs {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  display: flex;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.thumbs button {
+  width: 52px;
+  height: 52px;
+  padding: 0;
+  overflow: hidden;
+  border: 2px solid rgb(255 255 255 / 0.85);
+  border-radius: 14px;
+  background: none;
+  box-shadow: 0 2px 10px rgb(0 0 0 / 0.25);
+}
+.thumbs button[aria-pressed="true"] {
+  border-color: var(--accent);
+  outline: 2px solid var(--accent);
+}
+.thumbs img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+/* While checking, a line sweeps the photo inside viewfinder corners. */
+.scanFrame {
+  --bracket: #fff;
+  position: absolute;
+  inset: 0;
+  background-color: rgb(8 18 12 / 0.22);
+}
+.scanLine {
+  position: absolute;
+  inset: 0;
+  animation: scan 2.2s ease-in-out infinite alternate;
+}
+.scanLine::before {
+  content: "";
+  position: absolute;
+  inset: 0 16px auto;
+  height: 4px;
+  border-radius: 2px;
+  background: var(--accent);
+  box-shadow: 0 0 18px 6px rgb(212 240 106 / 0.6);
+}
+@keyframes scan {
+  from {
+    transform: translateY(8%);
+  }
+  to {
+    transform: translateY(88%);
+  }
+}
+
+.verdict {
+  display: grid;
+  gap: 16px;
+  padding: 20px;
+  border-radius: var(--radius-l);
+  background: var(--tone-bg);
+  box-shadow: var(--shadow-float);
+}
+.verdictHead {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+.badge {
+  display: grid;
+  flex-shrink: 0;
+  place-items: center;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: var(--tone);
+  color: var(--tone-bg);
+}
+.title {
+  display: grid;
+  gap: 2px;
+}
+.crop {
+  color: var(--ink-2);
+  font-family: var(--font-body);
+  font-size: 1.05rem;
+  font-weight: 600;
+  letter-spacing: 0;
+}
+.severity {
+  color: var(--tone);
+  font-size: clamp(1.6rem, 1.3rem + 1.5vw, 2.4rem);
+  line-height: 1.05;
+}
+.label {
+  margin-bottom: 2px;
+  color: var(--ink-2);
+  font-family: var(--font-body);
+  font-size: 0.95rem;
+  font-weight: 600;
+  letter-spacing: 0;
+}
+.issue {
+  font-family: var(--font-display);
+  font-size: 1.35rem;
+  font-weight: 600;
+  line-height: 1.25;
+  letter-spacing: -0.01em;
+}
+.verdictFoot {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding-top: 14px;
+  border-top: 1px solid color-mix(in srgb, var(--tone) 22%, transparent);
+}
+
+/* The most important part: what to do, on deep green. */
+.todo {
+  display: grid;
+  gap: 10px;
+  padding: 22px;
+  border-radius: var(--radius-l);
+  background: var(--brand);
+  color: var(--on-brand);
+}
+.todo h2 {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 1.35rem;
+}
+.todoIcon {
+  display: grid;
+  flex-shrink: 0;
+  place-items: center;
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  background: var(--accent);
+  color: var(--on-accent);
+}
+.todo p {
+  font-size: 1.2rem;
+  line-height: 1.5;
+}
+
+.facts {
+  margin: 0;
+  padding: 4px 20px;
+  border-radius: var(--radius-l);
+  background: var(--surface);
+}
+.fact {
+  padding: 16px 0;
+}
+.fact + .fact {
+  border-top: 1px solid var(--line);
+}
+.fact dt {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-family: var(--font-display);
+  font-size: 1.15rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+.factIcon {
+  display: grid;
+  flex-shrink: 0;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: var(--surface-2);
+  color: var(--link);
+}
+.fact dd {
+  margin: 6px 0 0 52px;
+}
+
+.help {
+  display: grid;
+  gap: 12px;
+  padding: 20px;
+  border-radius: var(--radius-l);
+  background: var(--surface);
+}
+.help h2 {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 1.3rem;
+}
+.helpIcon {
+  display: grid;
+  flex-shrink: 0;
+  place-items: center;
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  background: var(--surface-2);
+  color: var(--link);
+}
+.muted,
+.caveat,
+.note {
+  color: var(--ink-2);
+}
+.caveat,
+.note {
+  font-size: 0.95rem;
+}
+
+.state {
+  display: grid;
+  justify-items: center;
+  gap: 12px;
+  padding: 32px 22px 26px;
+  border-radius: var(--radius-l);
+  background: var(--surface);
+  box-shadow: var(--shadow-float);
+  text-align: center;
+}
+.stateIcon {
+  display: grid;
+  place-items: center;
+  width: 76px;
+  height: 76px;
+  border-radius: 50%;
+  background: var(--surface-2);
+  color: var(--link);
+}
+.state h1 {
+  font-size: 1.7rem;
+}
+.state p {
+  max-width: 26em;
+  color: var(--ink-2);
+}
+
+.skeletonCard {
+  display: grid;
+  gap: 14px;
+  padding: 20px;
+  border-radius: var(--radius-l);
+  background: var(--surface);
+  box-shadow: var(--shadow-float);
+}
+
+.footer {
+  display: grid;
+  gap: 16px;
+  margin-top: 6px;
+}
+.meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 18px;
+  margin: 0;
+  padding: 0;
+  color: var(--ink-2);
+  font-size: 1rem;
+  list-style: none;
+}
+.meta li {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.delete {
+  justify-self: start;
+}

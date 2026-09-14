@@ -1,6 +1,7 @@
 import { webIdentity, sameOrigin } from "@/lib/auth";
-import { uploadInspection } from "@/lib/inspections";
-import { errorResponse, databaseError } from "@/lib/errors";
+import { listInspections, uploadInspection } from "@/lib/inspections";
+import { errorResponse } from "@/lib/errors";
+import { REPORTS_PAGE_SIZE } from "@/lib/limits";
 export const runtime = "nodejs";
 export const maxDuration = 120;
 export async function POST(req: Request) {
@@ -16,24 +17,14 @@ export async function POST(req: Request) {
 export async function GET(req: Request) {
   try {
     const identity = await webIdentity();
-    const page = Math.max(
-      0,
-      Math.min(
-        1000,
-        Math.floor(Number(new URL(req.url).searchParams.get("page")) || 0),
-      ),
+    const params = new URL(req.url).searchParams;
+    const inspections = await listInspections(
+      identity,
+      Number(params.get("page")),
+      Number(params.get("limit")) || REPORTS_PAGE_SIZE,
     );
-    const { data, error } = await identity.db
-      .from("inspections")
-      .select(
-        "id,status,crop_hint,created_at,image_count,error_message,analysis_reports(report)",
-      )
-      .eq("owner_id", identity.owner)
-      .order("created_at", { ascending: false })
-      .range(page * 20, page * 20 + 19);
-    databaseError(error);
     return Response.json(
-      { inspections: data },
+      { inspections },
       { headers: { "Cache-Control": "no-store" } },
     );
   } catch (e) {

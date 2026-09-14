@@ -1,0 +1,45 @@
+.pageHeader {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 14px 24px;
+  margin-bottom: 24px;
+}
+.lead {
+  max-width: 36em;
+  margin-top: 8px;
+  color: var(--ink-2);
+}
+.loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  min-height: 160px;
+  color: var(--ink-2);
+  font-weight: 600;
+}
+.skeleton {
+  display: block;
+}
+.error {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px 12px;
+  margin-block: 12px;
+  padding: 14px 16px;
+  border-radius: var(--radius-m);
+  background: var(--danger-soft);
+  color: var(--danger);
+  font-weight: 600;
+}
+.error > svg {
+  flex-shrink: 0;
+  align-self: flex-start;
+}
+.error p {
+  flex: 1 1 12em;
+  color: var(--ink);
+}

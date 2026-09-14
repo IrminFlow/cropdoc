@@ -2,45 +2,60 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { UserButton } from "@clerk/nextjs";
-import { Camera, Files, Settings } from "lucide-react";
+import { Camera, ClipboardText, Question } from "@phosphor-icons/react/ssr";
 import { Brand } from "./brand";
-export function Shell({ children }: { children: React.ReactNode }) {
+import styles from "./shell.module.css";
+
+const LINKS = [
+  { href: "/upload", label: "Check crop", icon: Camera },
+  { href: "/reports", label: "My reports", icon: ClipboardText },
+  { href: "/help", label: "Help", icon: Question },
+];
+
+function NavLinks({ className }: { className: string }) {
   const path = usePathname();
   return (
-    <div className="simple-app">
-      <header className="simple-header">
-        <Brand />
-        <div className="simple-account">
-          <details className="settings-menu">
-            <summary aria-label="More options">
-              <Settings size={22} />
-              <span>More</span>
-            </summary>
-            <div>
-              <Link href="/upload#how-to">How to use</Link>
-              <Link href="/devices">Connect a camera</Link>
-            </div>
-          </details>
-          <UserButton />
+    <nav className={className} aria-label="Main">
+      {LINKS.map(({ href, label, icon: Icon }) => {
+        const active = path.startsWith(href);
+        return (
+          <Link
+            key={href}
+            href={href}
+            aria-current={active ? "page" : undefined}
+          >
+            <Icon size={26} weight={active ? "fill" : "regular"} aria-hidden />
+            {label}
+          </Link>
+        );
+      })}
+    </nav>
+  );
+}
+
+export function Shell({ children }: { children: React.ReactNode }) {
+  return (
+    <div className={styles.app}>
+      <a className="skip-link" href="#main">
+        Skip to main content
+      </a>
+      <header className={styles.header}>
+        <div className={styles.headerInner}>
+          <Brand />
+          <NavLinks className={styles.topNav} />
+          <div className={styles.account}>
+            <UserButton
+              appearance={{
+                elements: { avatarBox: { width: 44, height: 44 } },
+              }}
+            />
+          </div>
         </div>
       </header>
-      <nav className="simple-nav" aria-label="Main navigation">
-        <Link
-          href="/upload"
-          aria-current={path === "/upload" ? "page" : undefined}
-        >
-          <Camera size={22} />
-          Check crop
-        </Link>
-        <Link
-          href="/reports"
-          aria-current={path.startsWith("/reports") ? "page" : undefined}
-        >
-          <Files size={22} />
-          My reports
-        </Link>
-      </nav>
-      <main className="simple-main">{children}</main>
+      <main id="main" className={styles.main}>
+        {children}
+      </main>
+      <NavLinks className={styles.tabBar} />
     </div>
   );
 }

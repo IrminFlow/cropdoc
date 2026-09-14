@@ -1,14 +1,19 @@
 import "server-only";
 import { createHash } from "node:crypto";
-import OpenAI from "openai";
-import { zodTextFormat } from "openai/helpers/zod";
+import { analyzePhotos, geminiKey, AI_QUOTA_MESSAGE } from "./gemini";
 import { z } from "zod";
-import { adminDb, env } from "./supabase";
+import { adminDb } from "./supabase";
 import type { Identity } from "./auth";
 import { AppError, databaseError } from "./errors";
 import { limitedForm, optimizeImage } from "./images";
-import { reportSchema, REPORT_PROMPT, validateReport } from "./report";
-import type { Inspection, InspectionView } from "./types";
+import { DAILY_CHECKS, MAX_PHOTOS, REPORTS_PAGE_SIZE } from "./limits";
+import { reportSchema, validateReport } from "./report";
+import type {
+  DailyUsage,
+  Inspection,
+  InspectionSummary,
+  InspectionView,
+} from "./types";
 const metadata = z.object({
   crop: z.string().trim().max(80),
   location: z.string().trim().max(120),
@@ -74,6 +79,105 @@ export async function inspectionView(
         new Date(item.lease_until ?? 0).getTime() < Date.now()),
   };
 }
+const SUMMARY_COLUMNS =
+  "id,status,crop_hint,created_at,image_count,error_message,analysis_reports(report),inspection_images(path,position)";
+type SummaryRow = Omit<InspectionSummary, "report" | "thumbnail_url"> & {
+  // PostgREST embeds the single report as an object or a one-element array,
+  // depending on how it detects the relationship.
+  analysis_reports: { report: unknown } | { report: unknown }[] | null;
+  inspection_images: { path: string; position: number }[] | null;
+};
+function storedReport(embedded: SummaryRow["analysis_reports"]) {
+  const row = Array.isArray(embedded) ? embedded[0] : embedded;
+  // One unreadable stored report must not break the whole history page.
+  const parsed = reportSchema.safeParse(row?.report);
+  return parsed.success ? parsed.data : null;
+}
+function firstPhotoPath(images: SummaryRow["inspection_images"]) {
+  let first: { path: string; position: number } | null = null;
+  for (const image of images ?? [])
+    if (!first || image.position < first.position) first = image;
+  return first?.path ?? null;
+}
+async function signThumbnails(identity: Identity, paths: string[]) {
+  const urls = new Map<string, string>();
+  if (!paths.length) return urls;
+  try {
+    const { data, error } = await identity.db.storage
+      .from("crop-images")
+      .createSignedUrls(paths, 300);
+    if (error) return urls;
+    for (const item of data)
+      if (!item.error && item.path && item.signedUrl)
+        urls.set(item.path, item.signedUrl);
+  } catch {
+    // Thumbnails are optional; a storage failure must not hide the history.
+  }
+  return urls;
+}
+export async function listInspections(
+  identity: Identity,
+  page: number,
+  limit = REPORTS_PAGE_SIZE,
+): Promise<InspectionSummary[]> {
+  const from =
+    Math.max(0, Math.min(1000, Math.floor(page) || 0)) * REPORTS_PAGE_SIZE;
+  // Short lists such as "Recent reports" sign fewer thumbnails.
+  const size = Math.max(
+    1,
+    Math.min(REPORTS_PAGE_SIZE, Math.floor(limit) || REPORTS_PAGE_SIZE),
+  );
+  const { data, error } = await identity.db
+    .from("inspections")
+    .select(SUMMARY_COLUMNS)
+    .eq("owner_id", identity.owner)
+    .order("created_at", { ascending: false })
+    .range(from, from + size - 1);
+  databaseError(error);
+  const rows = (data ?? []) as SummaryRow[];
+  const paths = rows.map((row) => firstPhotoPath(row.inspection_images));
+  const urls = await signThumbnails(identity, [
+    ...new Set(paths.filter((path) => path !== null)),
+  ]);
+  return rows.map((row, i) => {
+    const path = paths[i];
+    return {
+      id: row.id,
+      status: row.status,
+      crop_hint: row.crop_hint,
+      created_at: row.created_at,
+      image_count: row.image_count,
+      error_message: row.error_message,
+      report: storedReport(row.analysis_reports),
+      thumbnail_url: path ? (urls.get(path) ?? null) : null,
+    };
+  });
+}
+/** Calendar day in India, matching the day claim_analysis counts attempts against. */
+export function indiaDay(date = new Date()): string {
+  const parts = Object.fromEntries(
+    new Intl.DateTimeFormat("en-CA", {
+      timeZone: "Asia/Kolkata",
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+    })
+      .formatToParts(date)
+      .map((part) => [part.type, part.value]),
+  );
+  return `${parts.year}-${parts.month}-${parts.day}`;
+}
+export async function dailyUsage(identity: Identity): Promise<DailyUsage> {
+  const { data, error } = await identity.db
+    .from("daily_usage")
+    .select("attempts")
+    .eq("owner_id", identity.owner)
+    .eq("day", indiaDay())
+    .maybeSingle();
+  databaseError(error);
+  const used = Math.min(DAILY_CHECKS, Math.max(0, Number(data?.attempts) || 0));
+  return { used, limit: DAILY_CHECKS };
+}
 export async function uploadInspection(identity: Identity, request: Request) {
   const key = z
     .string()
@@ -90,7 +194,7 @@ export async function uploadInspection(identity: Identity, request: Request) {
   const files = form.getAll("images");
   if (
     files.length < 1 ||
-    files.length > 4 ||
+    files.length > MAX_PHOTOS ||
     files.some((f) => !(f instanceof File))
   )
     throw new AppError("INVALID_IMAGE", "Choose one to four crop photos.");
@@ -159,16 +263,9 @@ export async function analyzeInspection(
   retry = false,
 ) {
   await getInspection(identity, id);
-  // Fail before reserving money if the provider has not been configured.
-  const apiKey = env("OPENAI_API_KEY");
-  if (process.env.OPENAI_MODEL && process.env.OPENAI_MODEL !== "gpt-5.6-luna")
-    throw new AppError(
-      "MODEL_CONFIGURATION",
-      "This demo is configured for GPT-5.6 Luna only.",
-      503,
-    );
+  const apiKey = geminiKey();
   const db = adminDb();
-  const { data: claim, error } = await db.rpc("claim_analysis", {
+  const { data: claim, error } = await db.rpc("claim_free_analysis", {
     p_owner: identity.owner,
     p_id: id,
     p_retry: retry,
@@ -176,7 +273,7 @@ export async function analyzeInspection(
   databaseError(error);
   if (!claim.acquired) return inspectionView(identity, id);
   const attempt = claim.attempt_id as string;
-  let cost: number | null = null;
+  let errorCode = "ANALYSIS_FAILED";
   let report = null;
   let message: string | null = null;
   try {
@@ -194,51 +291,17 @@ export async function analyzeInspection(
           .from("crop-images")
           .download(image.path);
         databaseError(error);
-        return `data:image/jpeg;base64,${Buffer.from(await data!.arrayBuffer()).toString("base64")}`;
+        return Buffer.from(await data!.arrayBuffer()).toString("base64");
       }),
     );
-    const openai = new OpenAI({ apiKey, timeout: 75_000, maxRetries: 0 });
-    const response = await openai.responses.parse({
-      model: "gpt-5.6-luna",
-      store: false,
-      reasoning: { effort: "low" },
-      max_output_tokens: 1500,
-      input: [
-        { role: "system", content: REPORT_PROMPT },
-        {
-          role: "user",
-          content: [
-            {
-              type: "input_text",
-              text: JSON.stringify({
-                crop: item.crop_hint,
-                location: item.location,
-                notes: item.notes,
-              }),
-            },
-            ...urls.map((image_url) => ({
-              type: "input_image" as const,
-              image_url,
-              detail: "high" as const,
-            })),
-          ],
-        },
-      ],
-      text: { format: zodTextFormat(reportSchema, "crop_report") },
-    });
-    // USD/million tokens: input .20, output 1.20; count cached input at full price conservatively.
-    if (response.usage)
-      cost = Math.ceil(
-        response.usage.input_tokens * 0.2 + response.usage.output_tokens * 1.2,
-      );
-    if (response.status !== "completed" || !response.output_parsed)
-      throw new Error("incomplete");
-    report = validateReport(response.output_parsed);
+    report = await analyzePhotos(apiKey, urls, item.crop_hint, item.notes);
   } catch (error) {
+    if (error instanceof AppError && error.code === "AI_QUOTA")
+      errorCode = "AI_QUOTA";
     message =
-      error instanceof OpenAI.APIError && error.status === 429
-        ? "The AI service is temporarily unavailable. Try again later."
-        : "Analysis could not be completed. You can retry with these photos.";
+      errorCode === "AI_QUOTA"
+        ? AI_QUOTA_MESSAGE
+        : "The check could not finish. Try again with the same photos.";
     console.error(
       JSON.stringify({
         event: "analysis_failed",
@@ -248,13 +311,13 @@ export async function analyzeInspection(
     );
   }
   const { data: finished, error: finishError } = await db.rpc(
-    "finish_analysis",
+    "finish_free_analysis",
     {
       p_owner: identity.owner,
       p_id: id,
       p_attempt: attempt,
       p_report: report,
-      p_cost: cost,
+      p_error_code: errorCode,
       p_error: message,
     },
   );
@@ -265,6 +328,8 @@ export async function analyzeInspection(
       "This analysis was interrupted. Refresh the report.",
       409,
     );
+  if (errorCode === "AI_QUOTA")
+    throw new AppError("AI_QUOTA", AI_QUOTA_MESSAGE, 429);
   return inspectionView(identity, id);
 }
 export async function deleteInspection(identity: Identity, id: string) {

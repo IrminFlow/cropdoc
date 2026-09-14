@@ -20,44 +20,44 @@ try {
     { stdio: "pipe" },
   );
   console.log(
-    "PASS: RLS, private Storage, field grants, ownership constraints, deletion, budget SQL",
+    "PASS: RLS, private Storage, field grants, ownership constraints, deletion, zero-cost SQL",
   );
   for (let n = 0; n < 6; n++) {
     const id = randomUUID();
     ids.push(id);
     check(
       (
-        await db
-          .from("inspections")
-          .insert({
-            id,
-            owner_id: owner,
-            idempotency_key: randomUUID(),
-            fingerprint: "test",
-            image_count: 1,
-            status: "ready",
-          })
+        await db.from("inspections").insert({
+          id,
+          owner_id: owner,
+          idempotency_key: randomUUID(),
+          fingerprint: "test",
+          image_count: 1,
+          status: "ready",
+        })
       ).error,
     );
     check(
       (
-        await db
-          .from("inspection_images")
-          .insert({
-            inspection_id: id,
-            owner_id: owner,
-            path: `${owner}/${id}/0.jpg`,
-            position: 0,
-            width: 10,
-            height: 10,
-            bytes: 10,
-          })
+        await db.from("inspection_images").insert({
+          inspection_id: id,
+          owner_id: owner,
+          path: `${owner}/${id}/0.jpg`,
+          position: 0,
+          width: 10,
+          height: 10,
+          bytes: 10,
+        })
       ).error,
     );
   }
   const results = await Promise.all(
     ids.map((id) =>
-      db.rpc("claim_analysis", { p_owner: owner, p_id: id, p_retry: false }),
+      db.rpc("claim_free_analysis", {
+        p_owner: owner,
+        p_id: id,
+        p_retry: false,
+      }),
     ),
   );
   results.forEach((r, i) => {
@@ -65,11 +65,22 @@ try {
       claims.push({ id: ids[i], attempt: r.data.attempt_id });
   });
   assert.equal(claims.length, 5);
+  const attempts = await db
+    .from("analysis_attempts")
+    .select("provider,model,charged_microusd")
+    .eq("owner_id", owner);
+  check(attempts.error);
+  assert.equal(attempts.data.length, 5);
+  for (const attempt of attempts.data) {
+    assert.equal(attempt.provider, "gemini");
+    assert.equal(attempt.model, "gemini-3.8-flash");
+    assert.equal(attempt.charged_microusd, 0);
+  }
   assert.equal(
     results.filter((r) => r.error?.message.includes("DAILY_QUOTA")).length,
     1,
   );
-  const duplicate = await db.rpc("claim_analysis", {
+  const duplicate = await db.rpc("claim_free_analysis", {
     p_owner: owner,
     p_id: claims[0].id,
     p_retry: false,
@@ -109,12 +120,12 @@ try {
   for (const c of claims)
     check(
       (
-        await db.rpc("finish_analysis", {
+        await db.rpc("finish_free_analysis", {
           p_owner: owner,
           p_id: c.id,
           p_attempt: c.attempt,
           p_report: null,
-          p_cost: 0,
+          p_error_code: "ANALYSIS_FAILED",
           p_error: "Test fixture; no provider call",
         })
       ).error,

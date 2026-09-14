@@ -1,32 +1,64 @@
-# CropDoc Python uploader
+# CropDoc uploader
 
-Requires Python 3.10+ and an internet connection. On Raspberry Pi, use a current 64-bit Raspberry Pi OS with Python 3.11+.
+Sends crop photos from a Raspberry Pi, a USB camera, or a computer to CropDoc, then prints a private link to each report.
+
+## Set up
+
+You need Python 3.10 or newer. On a Raspberry Pi, use a current 64-bit Raspberry Pi OS. Run these commands in this folder:
 
 ```sh
 python3 -m venv .venv
 . .venv/bin/activate
 pip install -r requirements.txt
 python crop_uploader.py --configure
-python crop_uploader.py image.jpg
 ```
 
-In the CropDoc web app, open **Devices**, name your Pi/computer, and create a token. Enter the app's HTTPS URL and token at the hidden configuration prompt. Configuration is saved with owner-only permissions in `~/.config/cropdoc/config.json`. Alternatively, set `CROPDOC_APP_URL` and `CROPDOC_DEVICE_TOKEN` in your process environment. Do not pass tokens on the command line, commit them, or use provider credentials.
+1. In the CropDoc web app, open **Help → Field cameras**. Name this device and choose **Make key**. The token is shown only once.
+2. `--configure` asks for the app URL (for example `https://cropdoc-lilac.vercel.app`) and then the token. The token stays hidden while you type it. Both are saved in `~/.config/cropdoc/config.json`, or `$XDG_CONFIG_HOME/cropdoc/config.json` if that variable is set. Only your user can read the file.
+
+On a device without a keyboard, set `CROPDOC_APP_URL` and `CROPDOC_DEVICE_TOKEN` instead. These take priority over the saved file. Don't type the token on the command line or put it in Git. AI provider keys never belong on the device.
+
+## Send photos
 
 ```sh
-# One report per file; directory scanning is non-recursive.
-python crop_uploader.py ./photos
-
-# Up to four views of ONE plant, combined into one report.
+python crop_uploader.py leaf.jpg                 # one photo, one report
+python crop_uploader.py ./photos                 # one report per photo in the folder
 python crop_uploader.py ./one-plant --group --crop Tomato --location Pune
-
-# Include optional observations and print report JSON.
 python crop_uploader.py leaf.jpg --notes 'Yellow spots for three days' --json
-
-# Explicitly request another analysis after a failed/stale attempt.
-python crop_uploader.py leaf.jpg --retry-failed
 ```
 
-Files are optimized before transmission. Supported: JPEG, PNG, WebP; still images under 20 MB / 40 megapixels. Output is a JPEG under 750 KB with a longest edge of 1600 pixels and no EXIF. The CLI prints a private report URL; sign into its owning account in the browser to view it.
+What you see:
+
+```text
+$ python crop_uploader.py leaf.jpg --crop Tomato
+Report: https://cropdoc-lilac.vercel.app/reports/5f0c9a1e-2b3d-4c5e-8f60-718293a4b5c6
+```
+
+Open the link while signed in to the CropDoc account that created the token.
+
+- **Running the same command again:** it prints `Already saved: <link>` instead of uploading again.
+- **`--json`:** the report is also printed as one line of JSON after the link.
+- **Problems:** they are printed as `Error: …` together with what to do next.
+- **Retries:** a retry shows a line like `Network error. Check the internet connection. Trying again in 2s…`.
+
+| Option | What it does |
+| --- | --- |
+| `PATH` | A photo, or a folder of photos. Subfolders and hidden files are skipped. |
+| `--group` | Combine up to four photos of the **same plant** into one report |
+| `--crop`, `--location`, `--notes` | Optional details, up to 80, 120 and 500 characters (emoji count as two) |
+| `--json` | Also print the report as JSON |
+| `--camera [INDEX]` | Take the photo with a USB camera (default camera 0) |
+| `--retry-failed` | Ask for one more analysis after a failed one. This uses one of today's attempts. |
+| `--retries N` | Retries after network or server errors, 0–5 (default 3) |
+| `--app-url URL` | Use this app URL instead of the saved one |
+| `--config FILE`, `--state FILE` | Use a different settings file or upload-history file |
+| `--configure` | Save the app URL and device token |
+
+Supported photos are JPEG (including Android "Ultra HDR" photos), PNG and WebP. Each must be a still image under 20 MB and 40 megapixels. Before sending, each photo is:
+
+- turned upright;
+- fitted within 1600 pixels (extremely detailed photos are made a little smaller so that the server accepts them);
+- saved as a JPEG under 750 KB, without EXIF data such as GPS location.
 
 ## USB camera
 
@@ -36,19 +68,48 @@ python crop_uploader.py --camera
 python crop_uploader.py --camera 1 --crop Tomato
 ```
 
-Camera support uses OpenCV/V4L2, releases the camera after one capture, and stores captures in the private state directory. It does not implement scheduled capture or the Pi CSI camera stack. Check `/dev/video*`, the OS camera permissions, and your device's `video` group if capture fails. On platforms without an OpenCV wheel, install the OS OpenCV package and create a venv with `--system-site-packages`.
+The uploader takes one photo with OpenCV (V4L2 on Linux), releases the camera, and keeps the photo in `~/.local/state/cropdoc/`. Running `--camera` again always takes a new photo. If an upload fails, the error message shows where the photo was saved. To resume that upload, run the same command with that file path in place of `--camera`.
 
-## Retry and privacy
+Scheduled capture and the Pi ribbon-cable (CSI) camera are not supported. If capture fails, check:
 
-Transport errors and transient server responses get up to three retries with exponential backoff. `--retries 0..5` adjusts this. Invalid tokens, invalid files, and exhausted quotas stop immediately. Redirects are never followed with credentials.
+- that the camera shows up under `/dev/video*`;
+- the operating system's camera permissions;
+- that your user is in the `video` group.
 
-State persists in `~/.local/state/cropdoc/uploads.json`, with owner-only permissions. Re-running the same command reuses its idempotency key, checks pending work, and skips completed uploads. After an ambiguous network failure, rerun the same command; do not remove its state file. `--retry-failed` permits one explicit additional AI analysis and consumes another daily attempt. App URL, device identity, image content, and context determine a submission's identity.
+If your platform has no OpenCV wheel, install the operating system's OpenCV package and create the venv with `--system-site-packages`.
 
-The client is intended for one process per state file. For independent concurrent clients, use different `--state` paths. Revoking a token in the web app immediately prevents new device requests. Existing signed image URLs can remain usable for up to five minutes.
+## Retries, resuming, and privacy
 
-Exit codes: `0` successful, `1` failed (details on stderr), `2` invalid command syntax, `130` interrupted. A batch stops on the first failure, preserving state; rerun it to resume. Shared limits are five analyses per account per India-calendar day and the application's $1 total demo budget.
+Google checks your photos and may use them to improve its AI. Upload crop-only photos without people or personal details.
 
-Run tests from the repository root:
+- **Retries:** network errors, server errors, and "server busy" answers are retried up to three times, with growing waits. Change the count with `--retries`. The uploader stops at once for:
+  - invalid tokens;
+  - secure-connection (certificate) problems, which often mean the device's date and time are wrong;
+  - unreadable photos;
+  - a used-up daily limit or Google free-tier quota (`AI_QUOTA`).
+- **Redirects:** the uploader never follows a redirect, so the token cannot be sent anywhere else. If the app URL redirects, update the app URL.
+- **Upload history:** kept in `~/.local/state/cropdoc/uploads.json` (or under `$XDG_STATE_HOME/cropdoc/`). Only your user can read it. It stores a request key for every submission. After any failure, rerun the same command: it continues where it stopped, skips finished photos, and avoids duplicate checks. Don't delete this file while uploads are unfinished.
+- **What counts as a new submission:** a submission is identified by the app URL, the token, the photos, and `--crop`/`--location`/`--notes`. Changing any of these makes it a new submission.
+- **`--retry-failed`:** asks for one more AI analysis after a failed or interrupted one, and uses one of the account's daily attempts.
+- **Don't run two uploads at once** with the same history file, for example from overlapping scheduled (cron) jobs. To run uploaders side by side, give each its own `--state` file.
+- **Revoking a token:** revoking the token in the web app blocks this device immediately. Photo links inside a report expire after five minutes.
+
+These limits are shared with the web app: five analyses per account per India-calendar day, and the Google project’s free-tier quota. No paid fallback is used.
+
+Exit codes:
+
+| Code | Meaning |
+| --- | --- |
+| `0` | Success |
+| `1` | Failure (message on stderr) |
+| `2` | Wrong command options |
+| `130` | Interrupted |
+
+A folder upload stops at the first failure; run it again to continue.
+
+## Tests
+
+From the repository root:
 
 ```sh
 python -m unittest discover -s device-client -v

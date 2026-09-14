@@ -1,0 +1,210 @@
+.page {
+  display: flex;
+  flex-direction: column;
+  min-height: 100dvh;
+}
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  width: 100%;
+  max-width: 1180px;
+  min-height: var(--header-h);
+  margin: 0 auto;
+  padding: 8px 20px;
+}
+.main {
+  display: grid;
+  gap: 40px;
+  width: 100%;
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 12px 20px 40px;
+}
+
+.hero {
+  display: grid;
+  gap: 24px;
+}
+.copy {
+  display: grid;
+  align-content: center;
+  gap: 16px;
+}
+.copy h1 {
+  font-size: clamp(2.6rem, 1.8rem + 3.6vw, 4.75rem);
+  line-height: 1;
+  letter-spacing: -0.035em;
+}
+.sub {
+  max-width: 28em;
+  color: var(--ink-2);
+  font-size: 1.2rem;
+}
+.ctas {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 6px;
+}
+.ctas > * {
+  flex: 1 1 100%;
+}
+
+/* The photo is clipped by its own frame so the report card can overlap
+   the edge without being cut off. */
+.media {
+  position: relative;
+  aspect-ratio: 4 / 5;
+  max-height: 78dvh;
+}
+.frame {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  border-radius: 28px;
+  background: var(--brand);
+}
+.photo {
+  object-fit: cover;
+}
+.preview {
+  position: absolute;
+  right: 14px;
+  bottom: 14px;
+  left: 14px;
+  display: grid;
+  gap: 12px;
+  padding: 16px 18px;
+  border-radius: var(--radius-l);
+  background: color-mix(in srgb, var(--surface) 92%, transparent);
+  box-shadow: var(--shadow-float);
+  backdrop-filter: blur(14px) saturate(160%);
+  -webkit-backdrop-filter: blur(14px) saturate(160%);
+}
+.previewHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+.previewHead strong {
+  font-family: var(--font-display);
+  font-size: 1.25rem;
+  letter-spacing: -0.01em;
+}
+.preview p {
+  font-size: 1rem;
+  line-height: 1.4;
+}
+.preview p span {
+  font-weight: 700;
+}
+
+.how {
+  display: grid;
+  gap: 16px;
+}
+.steps {
+  display: grid;
+  gap: 12px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  counter-reset: step;
+}
+.steps li {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  align-items: center;
+  gap: 16px;
+  padding: 16px;
+  border-radius: var(--radius-l);
+  background: var(--surface);
+  font-family: var(--font-display);
+  font-size: 1.2rem;
+  font-weight: 600;
+  line-height: 1.2;
+  letter-spacing: -0.01em;
+  counter-increment: step;
+}
+.icon {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  background: var(--surface-2);
+  color: var(--link);
+}
+/* The step number sits on the icon, so the order reads at a glance. */
+.icon::after {
+  content: counter(step);
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: var(--brand);
+  color: var(--on-brand);
+  font-family: var(--font-body);
+  font-size: 0.9rem;
+  font-weight: 700;
+}
+.promises {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px 28px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.promises li {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-weight: 600;
+}
+.promises svg {
+  flex-shrink: 0;
+  color: var(--link);
+}
+.footer {
+  padding: 20px;
+  color: var(--ink-2);
+  font-size: 0.95rem;
+  text-align: center;
+}
+
+@media (min-width: 900px) {
+  .main {
+    gap: 56px;
+    padding-top: 24px;
+  }
+  .hero {
+    grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr);
+    align-items: center;
+    gap: 56px;
+  }
+  .media {
+    aspect-ratio: 4 / 5;
+    max-height: 680px;
+  }
+  .ctas > * {
+    flex: 0 0 auto;
+  }
+  .preview {
+    right: auto;
+    bottom: 28px;
+    left: -36px;
+    width: min(360px, 90%);
+  }
+  .steps {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}

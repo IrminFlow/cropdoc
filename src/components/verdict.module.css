@@ -1,0 +1,83 @@
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 11px 4px 8px;
+  border-radius: 999px;
+  background: var(--tone-bg);
+  color: var(--tone);
+  font-size: 0.9rem;
+  font-weight: 600;
+  line-height: 1.3;
+  white-space: nowrap;
+}
+.chip svg {
+  flex-shrink: 0;
+}
+
+.meter {
+  width: 100%;
+}
+.meterBars {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 6px;
+}
+.meterBars span {
+  height: 12px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--tone) 16%, transparent);
+  transform-origin: left center;
+}
+.meterBars span[data-filled]:nth-child(1) {
+  background: #2f9a52;
+}
+.meterBars span[data-filled]:nth-child(2) {
+  background: #e3ad12;
+}
+.meterBars span[data-filled]:nth-child(3) {
+  background: #e3741f;
+}
+.meterBars span[data-filled]:nth-child(4) {
+  background: #d23a26;
+}
+/* A fresh result fills the bars one by one, like a gauge settling. */
+@media (prefers-reduced-motion: no-preference) {
+  .meter[data-animate] .meterBars span[data-filled] {
+    animation: fill 520ms var(--ease-out) both;
+    animation-delay: calc(200ms + var(--i) * 120ms);
+  }
+}
+@keyframes fill {
+  from {
+    transform: scaleX(0);
+  }
+}
+.meterScale {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 6px;
+  color: var(--ink-2);
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+.confidence {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  font-weight: 600;
+}
+.dots {
+  display: inline-flex;
+  gap: 5px;
+}
+.dots span {
+  width: 13px;
+  height: 13px;
+  border: 2px solid currentColor;
+  border-radius: 50%;
+}
+.dots span[data-on] {
+  background: currentColor;
+}

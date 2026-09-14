@@ -13,15 +13,14 @@ vi.mock("@/lib/supabase", () => ({
   }),
   env: () => "test-only-key",
 }));
-vi.mock("openai", () => {
-  class APIError extends Error {
-    status = 429;
-  }
-  class Client {
-    static APIError = APIError;
-    responses = { parse: mocks.parse };
-  }
-  return { default: Client };
+vi.mock("@/lib/gemini", async () => {
+  const actual =
+    await vi.importActual<typeof import("@/lib/gemini")>("@/lib/gemini");
+  return {
+    ...actual,
+    geminiKey: () => "test-only-key",
+    analyzePhotos: mocks.parse,
+  };
 });
 import { analyzeInspection, inspectionView } from "@/lib/inspections";
 import type { Identity } from "@/lib/auth";
@@ -63,7 +62,7 @@ const identity = {
 beforeEach(() => {
   vi.clearAllMocks();
   mocks.rpc.mockImplementation(async (name: string) =>
-    name === "claim_analysis"
+    name === "claim_free_analysis"
       ? { data: { acquired: true, attempt_id: "attempt" }, error: null }
       : { data: true, error: null },
   );
@@ -125,52 +124,51 @@ describe("analysis lifecycle", () => {
     expect(view.status).toBe("uploading");
     expect(view.lease_active).toBe(false);
   });
-  it("uses the requested model and saves validated structured output", async () => {
-    mocks.parse.mockResolvedValue({
-      status: "completed",
-      output_parsed: report,
-      usage: { input_tokens: 1000, output_tokens: 100 },
-    });
+  it("saves validated output and excludes location and account identifiers", async () => {
+    mocks.parse.mockResolvedValue(report);
     await analyzeInspection(identity, id);
     expect(mocks.parse).toHaveBeenCalledWith(
-      expect.objectContaining({
-        model: "gpt-5.6-luna",
-        store: false,
-        max_output_tokens: 1500,
-      }),
+      "test-only-key",
+      [Buffer.from("photo").toString("base64")],
+      "",
+      "",
     );
     expect(mocks.rpc).toHaveBeenCalledWith(
-      "finish_analysis",
-      expect.objectContaining({ p_report: report, p_cost: 320 }),
+      "finish_free_analysis",
+      expect.objectContaining({ p_report: report }),
     );
+    expect(mocks.rpc.mock.calls.at(-1)?.[1]).not.toHaveProperty("p_cost");
   });
-  it("retains the reservation when provider outcome is unknown", async () => {
+  it("saves recoverable failure when provider outcome is unknown", async () => {
     mocks.parse.mockRejectedValue(new Error("timeout"));
     await analyzeInspection(identity, id);
     expect(mocks.rpc).toHaveBeenCalledWith(
-      "finish_analysis",
-      expect.objectContaining({ p_report: null, p_cost: null }),
+      "finish_free_analysis",
+      expect.objectContaining({
+        p_report: null,
+        p_error_code: "ANALYSIS_FAILED",
+      }),
     );
   });
-  it("does not save malformed reports even after a successful provider response", async () => {
-    mocks.parse.mockResolvedValue({
-      status: "completed",
-      output_parsed: { ...report, severity: "invented" },
-      usage: { input_tokens: 1000, output_tokens: 100 },
+  it("persists quota failure before returning AI_QUOTA", async () => {
+    const { AppError } = await import("@/lib/errors");
+    mocks.parse.mockRejectedValue(new AppError("AI_QUOTA", "Try later", 429));
+    await expect(analyzeInspection(identity, id)).rejects.toMatchObject({
+      code: "AI_QUOTA",
+      status: 429,
     });
-    await analyzeInspection(identity, id);
     expect(mocks.rpc).toHaveBeenCalledWith(
-      "finish_analysis",
-      expect.objectContaining({ p_report: null, p_cost: 320 }),
+      "finish_free_analysis",
+      expect.objectContaining({ p_report: null, p_error_code: "AI_QUOTA" }),
     );
   });
-  it("does not call OpenAI when quota admission fails", async () => {
+  it("does not call Google when daily quota admission fails", async () => {
     mocks.rpc.mockResolvedValue({
       data: null,
-      error: { message: "BUDGET_EXHAUSTED" },
+      error: { message: "DAILY_QUOTA" },
     });
     await expect(analyzeInspection(identity, id)).rejects.toMatchObject({
-      code: "BUDGET_EXHAUSTED",
+      code: "DAILY_QUOTA",
     });
     expect(mocks.parse).not.toHaveBeenCalled();
   });

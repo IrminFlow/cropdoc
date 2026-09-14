@@ -2,19 +2,29 @@
 
 Demo URL: https://cropdoc-lilac.vercel.app
 
-See [deployment verification](VERIFICATION.md) for completed checks and the two remaining service-configuration blockers.
+See [deployment verification](VERIFICATION.md) for completed checks and remaining service-configuration blockers.
 
-A small crop-photo analysis app for Indian growers. Next.js + TypeScript, Clerk, Supabase Postgres/Storage, and the OpenAI Responses API. Includes a Python/USB camera uploader.
+A small crop-photo analysis app for Indian growers. Next.js + TypeScript, Clerk, Supabase Postgres/Storage, and the Gemini Interactions API. Includes a Python/USB camera uploader.
 
-## Simple farmer flow
+## Screens
 
-Opening the app goes straight to sign-in, then **Check crop**. The main navigation has only **Check crop** and **My reports**. Crop name, location, and notes are optional. The grouping choice appears only when more than one photo is selected. Camera-token setup is under **More**. Existing dashboard links redirect to Check crop.
+Built for growers who may not read easily, on a phone, outdoors: large type, strong contrast, big buttons, and every colour paired with an icon and a plain word. Phones get a bottom tab bar (**Check crop**, **My reports**, **Help**); wider screens get the same links in the header.
 
-A 20-second silent illustrated walkthrough is available under **How to use**. It loads only when played, includes readable text and captions, and has no audio track. Regenerate it with `node scripts/make-walkthrough.mjs` (requires ffmpeg).
+- **Welcome** (`/`): signed-out visitors see what CropDoc does in three pictured steps, then **Start for free** or **Sign in**. Signed-in visitors go straight to Check crop.
+- **Check crop** (`/upload`): one mustard "viewfinder" panel with **Take a photo** and **Choose from gallery** (up to four photos). With more than one photo it asks whether they show the same plant (one report) or different plants (one report each). Crop name, place and notes are optional and folded away. The page also shows checks left today, photo tips and the latest reports.
+- **Report** (`/reports/:id`): the photo, then a colour-coded verdict (looks healthy, small, medium or serious problem, or not sure), a four-step severity gauge, the possible problem and how sure the AI is, **Listen to report** (read aloud by the phone's own voice), **What to do now**, the other advice, and a button to call the free Kisan helpline (1800-180-1551). While a check runs, a scan line sweeps across the photo.
+- **My reports** (`/reports`): newest first, with photo thumbnails and verdict chips. **Show older reports** loads more.
+- **Help** (`/help`): the steps (with **Listen**), good and bad photos, the helpline, limits and privacy, and a link to **Field cameras** (`/devices`) for Raspberry Pi or USB camera keys.
+
+Old `/dashboard` links redirect to Check crop. The web app manifest lets growers add CropDoc to their home screen.
+
+Design: Bricolage Grotesque headings with Geist body text, deep forest green with one fresh lime accent for the main action, Phosphor icons, and light and dark themes that follow the phone's setting. Photos are real crop and farm photography in `src/assets/photos/` (Unsplash License; see `src/assets/photos/CREDITS.md`), served through `next/image`. Anything you press is a pill; photos and panels use 24px corners.
+
+Styles: design tokens and shared building blocks (buttons, fields, verdict colours, skeleton loaders, the viewfinder corners) are in `src/app/globals.css`; each screen keeps its own CSS module next to its component. Plain-language wording for verdicts lives in `src/lib/verdict.ts`, and shared limits in `src/lib/limits.ts`.
 
 ## Run locally
 
-Requires Node 22+, npm, and Python 3.10+ for the device client.
+Requires Node 22.x, npm, and Python 3.10+ for the device client.
 
 ```sh
 npm ci
@@ -30,10 +40,10 @@ Open http://localhost:3000. Run `npm run lint`, `npm run typecheck`, `npm test`,
 1. **Clerk:** create a consumer application with Google, email/password, and email-code login. Enable email verification. Put its publishable and secret keys in `.env.local`. Activate the native Supabase integration at https://clerk.com/setup/supabase to add `role: authenticated` to session tokens.
 2. **Supabase:** create a dedicated project. Enable Clerk in Authentication → Third-Party Auth using the exact Clerk frontend domain. Copy the project URL, publishable/anon key, and server-only service-role key. Do not use the deprecated Clerk Supabase JWT template.
 3. **Database:** install/login to the Supabase CLI, then `supabase link --project-ref YOUR_REF` and `supabase db push`. Migrations create all tables, private `crop-images` Storage, grants, policies, and atomic functions. Replace the Clerk domain in `supabase/config.toml` for your instance. Local Supabase requires Docker; hosted migrations and `supabase db query --linked` do not.
-4. **OpenAI:** create a restricted project API key with Responses access and `gpt-5.6-luna` access. Set `OPENAI_API_KEY`; no other model is automatically selected. Add a provider project spending limit as a secondary guard when supported.
+4. **Gemini, strictly free:** in [Google AI Studio](https://aistudio.google.com/api-keys), create a dedicated project with **no billing account attached**. Create a key for that project. Verify the project's free-tier model access and its Google Cloud Billing page before enabling analysis. Set server-only `GEMINI_API_KEY`, `GEMINI_PROJECT_ID`, `GEMINI_MODEL=gemini-3.8-flash`, and only then `GEMINI_FREE_TIER_VERIFIED=true`. Missing or unverified configuration blocks calls. Never attach billing, enable paid tiers, or configure a fallback. This flag records the operator's verification; it cannot detect later account changes. Keep billing disabled. Revoke any previously exposed OpenAI key; no OpenAI credentials are needed.
 5. **Clerk webhook:** add `https://YOUR_APP/api/webhooks/clerk`, subscribe to `user.deleted`, and set `CLERK_WEBHOOK_SIGNING_SECRET`. Failed cleanup returns an error for webhook retry. `/api/health` returns 503 if required configuration is missing.
 
-Only `NEXT_PUBLIC_*` values belong in the browser. Never put Clerk secrets, Supabase service-role keys, or OpenAI keys on a device or in Git. Local credentials are ignored.
+Only `NEXT_PUBLIC_*` values belong in the browser. Never put Clerk secrets, Supabase service-role keys, or Gemini keys on a device or in Git. Local credentials are ignored.
 
 ## Deploy
 
@@ -47,33 +57,36 @@ vercel --prod
 
 Use Vercel's Git integration for subsequent deployments. This demo uses a free `vercel.app` URL and **Clerk development credentials**. A production Clerk instance requires your own domain, production OAuth configuration, production keys, and an updated Supabase trusted issuer. Development users are not automatically migrated to production. Hosting remains on free tiers; there is no automatic paid upgrade.
 
-The GitHub workflow needs the three public Clerk/Supabase values configured as repository variables. Database tests run explicitly with a linked dedicated project and `.env.local`: `npm run test:db`. They use rolled-back SQL and temporary test rows; no OpenAI calls. Do not run integration fixtures against an unrelated production database.
+The GitHub workflow needs the three public Clerk/Supabase values configured as repository variables. Database tests run explicitly with a linked dedicated project and `.env.local`: `npm run test:db`. They use rolled-back SQL and temporary test rows; no AI provider calls. Do not run integration fixtures against an unrelated production database.
 
 ## Behavior and limits
 
 - One report per photo or one grouped report from up to four views of the same plant. Different plants should use individual reports.
 - JPEG/PNG/WebP up to 20 MB are optimized locally to JPEG under 750 KB and a 1600-pixel longest edge. Only optimized photos are retained. API uploads are limited to 800 KB per image, 3.5 MB per request, four images, and 20 million decoded pixels. Animated/invalid images are rejected.
 - Reports have exactly nine structured fields and at most 110 words (prompt target: under 100). Confidence is qualitative, not a calibrated probability. Optional remedies/expert notes are nullable. Uncertainty and inability to assess are valid outcomes.
-- Five paid analysis attempts per account per India-calendar day, shared by all devices. A $1 **total, non-resetting demo budget** lives in `ai_budget`. Each attempt reserves $0.05 atomically before calling OpenAI. Recorded token costs settle the reservation; unknown charges retain the reservation. No hidden SDK retries.
-- GPT-5.6 Luna standard pricing used for accounting: $0.20/million input tokens and $1.20/million output tokens, verified September 2026. Cached inputs are conservatively counted at full input price. Requests have 1,500 output tokens maximum and no tools. Reverify pricing before changing the model or scaling the cap.
+- Five analysis attempts per account per India-calendar day, shared by web and devices, including failures and explicit retries. Google free-tier limits also apply. Provider exhaustion returns `AI_QUOTA`; the inspection is saved and automatic CLI retries stop. Saved history remains available.
+- Gemini 3.8 Flash runs on a dedicated project without billing. Every new attempt records `provider=gemini`, the model, and zero cost. The old `ai_budget` and historical OpenAI charges remain unchanged. The old paid admission function is disabled. No dollar reservation, paid fallback, tools, or hidden provider retries. Output is bounded to 1,500 tokens with low thinking and a 75-second timeout. See [Google pricing](https://ai.google.dev/gemini-api/docs/pricing) and [billing](https://ai.google.dev/gemini-api/docs/billing). Free capacity is limited and not guaranteed.
 - Up to 100 retained inspections and ten active device tokens per user. Up to two simultaneous upload/analysis leases. Delete old reports or revoke tokens to free capacity.
-- Analysis runs within a bounded HTTP request, without a worker. A 120-second processing lease makes interrupted work explicitly retryable. A lost response does not immediately trigger a duplicate paid call. The CLI persists idempotency state and checks the same inspection before requesting an explicit retry.
+- Analysis runs within a bounded HTTP request, without a worker. A 120-second processing lease makes interrupted work explicitly retryable. A lost response does not immediately trigger a duplicate AI call. The CLI persists idempotency state and checks the same inspection before requesting an explicit retry.
 - Files and reports remain until deletion. Deletion removes Storage objects before tracking rows. Account deletion denies subsequent access, revokes tokens, and cleans data through verified webhook retries. Aggregate budget usage is preserved.
 
 ## Security and data flow
 
-Browser/CLI → authenticated Next.js API → private Supabase Storage → OpenAI image input → validated report → Supabase.
+Browser/CLI → authenticated Next.js API → private Supabase Storage → Gemini image input → validated report → Supabase.
 
 Normal web reads carry a verified Clerk session token through Supabase RLS. Policies match `auth.jwt()->>'sub'` to indexed text ownership IDs. Composite foreign keys prohibit attaching images/reports to another user's inspection. Client roles cannot write reports, quotas, token digests, or processing state. Server-only mutations check ownership and use restricted atomic functions; only the server has the service key.
 
-Tokens have 256 random bits, are shown once, and only SHA-256 digests are stored. A device can upload and read/retry inspections it created; it cannot browse web uploads, other devices' reports, manage tokens, or delete records. Signed image URLs expire after five minutes and are bearer links during that interval. Avoid sharing them. OpenAI receives normalized images and optional context with `store:false`; standard provider retention policies still apply.
+Tokens have 256 random bits, are shown once, and only SHA-256 digests are stored. A device can upload and read/retry inspections it created; it cannot browse web uploads, other devices' reports, manage tokens, or delete records. Signed image URLs expire after five minutes and are bearer links during that interval. Avoid sharing them. Google receives optimized photos, crop name and symptom notes only. Account identifiers and location are excluded. Requests use `store:false`, which does not override free-tier data-use terms.
+
+Before submission and in device setup, users see: **“Google checks your photos and may use them to improve its AI. Upload crop-only photos without people or personal details.”** Google's [unpaid-service terms](https://ai.google.dev/gemini-api/terms#unpaid-services) permit product improvement and human review. Private Supabase storage does not make submitted content private from Google.
 
 ## API
 
 | Endpoint | Authentication | Purpose |
 | --- | --- | --- |
 | `POST /api/inspections` | Clerk | Multipart upload: `images`, optional `crop`, `location`, `notes`; required `Idempotency-Key` |
-| `GET /api/inspections?page=0` | Clerk | Newest reports, 20 per page |
+| `GET /api/inspections?page=0` | Clerk | Newest reports, 20 per page: `{inspections: [{id, status, crop_hint, created_at, image_count, error_message, report, thumbnail_url}]}`. `report` is the saved report or `null`; `thumbnail_url` is a five-minute signed URL of the first photo, or `null` if it is unavailable |
+| `GET /api/usage` | Clerk | Checks used today (India calendar day): `{used, limit}` |
 | `GET/DELETE /api/inspections/:id` | Clerk | Own report or deletion |
 | `POST /api/inspections/:id/analyze?retry=1` | Clerk | Analysis; explicit retry for failed/stale attempts |
 | `GET/POST /api/devices` | Clerk | List token metadata or create a token with JSON `{name}` |
@@ -82,6 +95,6 @@ Tokens have 256 random bits, are shown once, and only SHA-256 digests are stored
 | `GET/POST /api/device/inspections/:id` | Same device token | Status/report or explicit analysis retry |
 | `POST /api/webhooks/clerk` | Verified webhook signature | Account-deletion cleanup |
 
-Errors use `{error: {code, message}}`. Daily/budget/storage limits return 429; invalid/revoked tokens return 401; inaccessible reports return 404. Retry transport failures and transient 5xx with bounded backoff; stop on permanent errors or budget exhaustion. Never follow an API redirect with a device credential.
+Errors use `{error: {code, message}}`. Daily/provider/storage limits return 429; invalid/revoked tokens return 401; inaccessible reports return 404. Retry transport failures and transient 5xx with bounded backoff; stop on permanent errors or provider quota exhaustion. Never follow an API redirect with a device credential.
 
 Device setup: [device-client/README.md](device-client/README.md).
