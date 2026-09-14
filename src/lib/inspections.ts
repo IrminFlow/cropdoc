@@ -1,6 +1,6 @@
 import "server-only";
 import { createHash } from "node:crypto";
-import { analyzePhotos, geminiKey, AI_QUOTA_MESSAGE } from "./gemini";
+import { analyzePhotos, openrouterKey, AI_QUOTA_MESSAGE } from "./openrouter";
 import { z } from "zod";
 import { adminDb } from "./supabase";
 import type { Identity } from "./auth";
@@ -263,7 +263,7 @@ export async function analyzeInspection(
   retry = false,
 ) {
   await getInspection(identity, id);
-  const apiKey = geminiKey();
+  const apiKey = openrouterKey();
   const db = adminDb();
   const { data: claim, error } = await db.rpc("claim_free_analysis", {
     p_owner: identity.owner,

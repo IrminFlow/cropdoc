@@ -94,7 +94,7 @@ export function Devices() {
             any time.
           </p>
           <p>
-            Google checks your photos and may use them to improve its AI. Upload
+            OpenRouter and AtlasCloud check your photos. Upload
             crop-only photos without people or personal details.
           </p>
           <form className={styles.form} onSubmit={create}>

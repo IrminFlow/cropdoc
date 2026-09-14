@@ -500,7 +500,7 @@ def build_parser() -> argparse.ArgumentParser:
 
 def configure(config_path: Path) -> None:
     """Ask for the app URL and device token and save them privately."""
-    print('Google checks your photos and may use them to improve its AI. Upload crop-only photos without people or personal details.')
+    print('OpenRouter and AtlasCloud check your photos. Upload crop-only photos without people or personal details.')
     try:
         base_url = check_app_url(input('App URL: '))
         token = check_token(getpass.getpass('Device token (hidden): '), 'That device token')

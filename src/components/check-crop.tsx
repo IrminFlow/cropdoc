@@ -249,7 +249,7 @@ export function CheckCrop() {
           {!starting && (
             <div className={styles.submit}>
               <p className={styles.submitNote}>
-                Google checks your photos and may use them to improve its AI.
+                OpenRouter and AtlasCloud check your photos.
                 Upload crop-only photos without people or personal details.
               </p>
               <button

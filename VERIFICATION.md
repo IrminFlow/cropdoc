@@ -43,3 +43,16 @@ The newer farmer interface was inspected locally at mobile and desktop sizes in 
 Clerk development credentials are used on the Vercel demo domain. Production authentication needs an owned domain and a production Clerk/OAuth configuration. Google login still needs a real end-to-end check.
 
 No physical Raspberry Pi or USB camera was available. OpenCV was installed and a Mac camera capture was attempted earlier; macOS denied camera access, so no real camera capture was verified.
+
+## OpenRouter replacement — September 14
+
+Dots3-Note Preview Free through OpenRouter/AtlasCloud produced a validated report
+from the real leaf photo `src/assets/photos/tip-close.jpg`. The provider reported
+zero cost and zero reasoning tokens. Requests pin the free model, set maximum
+input/output prices to zero, disable provider fallbacks and training providers,
+and validate the JSON schema, length and reported zero cost before saving.
+
+The server key is configured in encrypted Vercel production settings. Migration
+202609140002 is applied. Local lint, TypeScript, production build, 67 app tests,
+30 Python tests, and hosted database isolation/concurrent quota tests pass.
+Deployed end-to-end verification will be recorded after the release is live.

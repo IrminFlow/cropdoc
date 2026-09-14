@@ -13,12 +13,14 @@ vi.mock("@/lib/supabase", () => ({
   }),
   env: () => "test-only-key",
 }));
-vi.mock("@/lib/gemini", async () => {
+vi.mock("@/lib/openrouter", async () => {
   const actual =
-    await vi.importActual<typeof import("@/lib/gemini")>("@/lib/gemini");
+    await vi.importActual<typeof import("@/lib/openrouter")>(
+      "@/lib/openrouter",
+    );
   return {
     ...actual,
-    geminiKey: () => "test-only-key",
+    openrouterKey: () => "test-only-key",
     analyzePhotos: mocks.parse,
   };
 });

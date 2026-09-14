@@ -37,7 +37,7 @@ update public.ai_budget set charged_microusd=1000000 where id=1;
 select public.claim_free_analysis('cropdoc_test_b','22222222-2222-4222-8222-222222222222',false);
 do $$ begin
  if (select charged_microusd from public.ai_budget where id=1)<>1000000 then raise exception 'Historical charges changed'; end if;
- if not exists(select 1 from public.analysis_attempts where owner_id='cropdoc_test_b' and provider='gemini' and model='gemini-3.8-flash' and charged_microusd=0) then raise exception 'Free attempt not recorded'; end if;
+ if not exists(select 1 from public.analysis_attempts where owner_id='cropdoc_test_b' and provider='openrouter' and model='dots-studio/dots-3-note-preview:free' and charged_microusd=0) then raise exception 'Free attempt not recorded'; end if;
 end $$;
 rollback;
 select 'RLS, Storage, ownership constraints, deleted-account access and zero-cost accounting passed' as result;

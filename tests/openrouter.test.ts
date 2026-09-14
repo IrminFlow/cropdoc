@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
-import { analyzePhotos, geminiKey } from "@/lib/gemini";
+import { analyzePhotos, openrouterKey } from "@/lib/openrouter";
 const report = {
   crop: "Unknown",
   symptoms: "Photo is unclear.",
@@ -22,13 +22,10 @@ afterEach(() => {
 });
 function completed(value: unknown) {
   return Response.json({
-    status: "completed",
-    steps: [
-      {
-        type: "model_output",
-        content: [{ type: "text", text: JSON.stringify(value) }],
-      },
+    choices: [
+      { finish_reason: "stop", message: { content: JSON.stringify(value) } },
     ],
+    usage: { cost: 0 },
   });
 }
 it("sends only crop context and optimized images to the fixed model without tools or storage", async () => {
@@ -38,42 +35,57 @@ it("sends only crop context and optimized images to the fixed model without tool
   ).toEqual(report);
   expect(fetchMock).toHaveBeenCalledTimes(1);
   const [url, options] = fetchMock.mock.calls[0];
-  expect(url).toBe(
-    "https://generativelanguage.googleapis.com/v1beta/interactions",
-  );
+  expect(url).toBe("https://openrouter.ai/api/v1/chat/completions");
   expect(options.redirect).toBe("error");
   const body = JSON.parse(options.body);
-  expect(body.model).toBe("gemini-3.8-flash");
-  expect(body.store).toBe(false);
+  expect(body.model).toBe("dots-studio/dots-3-note-preview:free");
+  expect(body.provider).toEqual({
+    allow_fallbacks: false,
+    require_parameters: true,
+    data_collection: "deny",
+    max_price: { prompt: 0, completion: 0 },
+  });
+  expect(body.response_format.json_schema.strict).toBe(true);
   expect(body.tools).toBeUndefined();
-  expect(body.input).toEqual([
+  expect(body.messages[1].content).toEqual([
     {
       type: "text",
       text: JSON.stringify({ crop: "Tomato", notes: "Yellow leaves" }),
     },
-    { type: "image", data: "one", mime_type: "image/jpeg" },
-    { type: "image", data: "two", mime_type: "image/jpeg" },
+    { type: "image_url", image_url: { url: "data:image/jpeg;base64,one" } },
+    { type: "image_url", image_url: { url: "data:image/jpeg;base64,two" } },
   ]);
 });
-it.each([429, 401, 403, 500])(
+it.each([429, 402, 401, 403, 500])(
   "does not retry or fall back after HTTP %i",
   async (status) => {
     fetchMock.mockResolvedValue(new Response("provider failure", { status }));
     await expect(
       analyzePhotos("test-key", ["image"], "", ""),
     ).rejects.toMatchObject({
-      code: status === 429 ? "AI_QUOTA" : "AI_PROVIDER",
+      code: status === 429 || status === 402 ? "AI_QUOTA" : "AI_PROVIDER",
     });
     expect(fetchMock).toHaveBeenCalledTimes(1);
   },
 );
 it.each([
-  { status: "incomplete", steps: [] },
   {
-    status: "completed",
-    steps: [{ type: "model_output", content: [{ type: "refusal" }] }],
+    choices: [{ finish_reason: "length", message: { content: "{}" } }],
+    usage: { cost: 0 },
   },
-  { status: "completed", steps: [] },
+  {
+    choices: [
+      { finish_reason: "stop", message: { content: "{}", refusal: "No" } },
+    ],
+    usage: { cost: 0 },
+  },
+  { choices: [], usage: { cost: 0 } },
+  {
+    choices: [
+      { finish_reason: "stop", message: { content: JSON.stringify(report) } },
+    ],
+    usage: { cost: 1 },
+  },
 ])("rejects incomplete, empty and refused results", async (result) => {
   fetchMock.mockResolvedValue(Response.json(result));
   await expect(analyzePhotos("test-key", ["image"], "", "")).rejects.toThrow();
@@ -92,16 +104,15 @@ it.each([
   await expect(analyzePhotos("test-key", ["image"], "", "")).rejects.toThrow();
 });
 it("requires credentials and verified free-project configuration before any call", () => {
-  vi.stubEnv("GEMINI_API_KEY", "");
-  expect(() => geminiKey()).toThrow();
-  vi.stubEnv("GEMINI_API_KEY", "test-key");
-  vi.stubEnv("GEMINI_FREE_TIER_VERIFIED", "false");
-  expect(() => geminiKey()).toThrow();
-  vi.stubEnv("GEMINI_FREE_TIER_VERIFIED", "true");
-  vi.stubEnv("GEMINI_PROJECT_ID", "dedicated-project");
-  vi.stubEnv("GEMINI_MODEL", "different-model");
-  expect(() => geminiKey()).toThrow();
-  vi.stubEnv("GEMINI_MODEL", "gemini-3.8-flash");
-  expect(geminiKey()).toBe("test-key");
+  vi.stubEnv("OPENROUTER_API_KEY", "");
+  expect(() => openrouterKey()).toThrow();
+  vi.stubEnv("OPENROUTER_API_KEY", "test-key");
+  vi.stubEnv("OPENROUTER_FREE_TIER_VERIFIED", "false");
+  expect(() => openrouterKey()).toThrow();
+  vi.stubEnv("OPENROUTER_FREE_TIER_VERIFIED", "true");
+  vi.stubEnv("OPENROUTER_MODEL", "different-model");
+  expect(() => openrouterKey()).toThrow();
+  vi.stubEnv("OPENROUTER_MODEL", "dots-studio/dots-3-note-preview:free");
+  expect(openrouterKey()).toBe("test-key");
   expect(fetchMock).not.toHaveBeenCalled();
 });

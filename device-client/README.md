@@ -80,7 +80,7 @@ If your platform has no OpenCV wheel, install the operating system's OpenCV pack
 
 ## Retries, resuming, and privacy
 
-Google checks your photos and may use them to improve its AI. Upload crop-only photos without people or personal details.
+OpenRouter and AtlasCloud check your photos. Upload crop-only photos without people or personal details.
 
 - **Retries:** network errors, server errors, and "server busy" answers are retried up to three times, with growing waits. Change the count with `--retries`. The uploader stops at once for:
   - invalid tokens;

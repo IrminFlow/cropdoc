@@ -5,13 +5,12 @@ export async function GET() {
       "CLERK_SECRET_KEY",
       "NEXT_PUBLIC_SUPABASE_URL",
       "SUPABASE_SERVICE_ROLE_KEY",
-      "GEMINI_API_KEY",
-      "GEMINI_PROJECT_ID",
+      "OPENROUTER_API_KEY",
       "CLERK_WEBHOOK_SIGNING_SECRET",
     ].every((k) => Boolean(process.env[k])) &&
-    process.env.GEMINI_FREE_TIER_VERIFIED === "true" &&
-    (!process.env.GEMINI_MODEL ||
-      process.env.GEMINI_MODEL === "gemini-3.8-flash");
+    process.env.OPENROUTER_FREE_TIER_VERIFIED === "true" &&
+    (!process.env.OPENROUTER_MODEL ||
+      process.env.OPENROUTER_MODEL === "dots-studio/dots-3-note-preview:free");
   return Response.json(
     { service: "cropdoc", configured },
     { status: configured ? 200 : 503 },

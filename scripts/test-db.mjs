@@ -72,8 +72,8 @@ try {
   check(attempts.error);
   assert.equal(attempts.data.length, 5);
   for (const attempt of attempts.data) {
-    assert.equal(attempt.provider, "gemini");
-    assert.equal(attempt.model, "gemini-3.8-flash");
+    assert.equal(attempt.provider, "openrouter");
+    assert.equal(attempt.model, "dots-studio/dots-3-note-preview:free");
     assert.equal(attempt.charged_microusd, 0);
   }
   assert.equal(
