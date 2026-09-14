@@ -56,3 +56,31 @@ The server key is configured in encrypted Vercel production settings. Migration
 202609140002 is applied. Local lint, TypeScript, production build, 67 app tests,
 30 Python tests, and hosted database isolation/concurrent quota tests pass.
 Deployed end-to-end verification will be recorded after the release is live.
+
+### Live release verified
+
+Production implementation commit: `1a81ea4`. Vercel deployment:
+`cropdoc-649ff1upt-irminflows-projects.vercel.app` (Ready). Public alias
+https://cropdoc-lilac.vercel.app explicitly assigned to that deployment;
+`/api/health` returns HTTP 200 with `configured:true`. GitHub CI passed.
+
+Against the public URL:
+- Two real leaf photos produced one validated, saved report. A second Clerk
+  session for the owner reopened the identical report.
+- Another real Clerk user was denied API, database and private image access.
+- Duplicate upload reused the inspection and recorded one analysis attempt.
+- History included the report; owner deletion removed storage and tracking rows.
+- The real Python uploader produced a single-photo report; rerunning it reported
+  “Already saved” without creating another inspection.
+- A plain, unclear image produced a saved Low-confidence, Unknown-severity report.
+- All temporary report/device fixtures were removed after verification.
+
+A live mobile-size upload screenshot was checked at 427×925 CSS pixels. Fresh
+full browser interaction/desktop resize verification was limited by preview
+client disconnects; cross-session access was verified through authenticated APIs.
+Physical phone, Raspberry Pi and USB-camera operation remain unverified. Clerk
+still uses development credentials for the demo. Free-provider capacity is limited.
+
+Deployment note: `cropdoc-lilac.vercel.app` is a manually assigned alias. After
+future production deployments, explicitly update this alias and verify its health
+endpoint; a Ready Git deployment alone did not update this particular alias.
