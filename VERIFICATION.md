@@ -85,3 +85,43 @@ still uses development credentials for the demo. Free-provider capacity is limit
 Deployment note: `cropdoc-lilac.vercel.app` is a manually assigned alias. After
 future production deployments, explicitly update this alias and verify its health
 endpoint; a Ready Git deployment alone did not update this particular alias.
+
+## OpenAI GPT-6 Luna — 3 October 2026
+
+Analysis now uses only `gpt-6-luna` through the official `openai` SDK
+(Responses API, strict structured output, `store: false`, no retries or
+fallback model). Reports add disease name, cause, spread risk, a generic
+chemical option with label-dose wording, a natural remedy and safety steps.
+Older saved reports still open.
+
+- Paused Supabase project restored. Migration `202610030001` applied:
+  each attempt reserves $0.05 and settles to its real token cost under a
+  $5 hard cap (input $0.10 / output $0.50 per million tokens).
+- Hosted RLS/Storage isolation plus cap enforcement, reservation and
+  real-cost settlement passed (rolled back; no rows left).
+- Live `gpt-6-luna` calls on repo photos produced validated reports in
+  4–7 seconds for $0.0003–0.0005 each: a confident fungal leaf spot got a
+  copper oxychloride option with safety steps; blurry and unclear photos
+  got "Not sure" with no chemical.
+- Lint, TypeScript, 67 app tests, 30 Python tests and a production build pass.
+
+Not yet verified: deployed end-to-end use. `OPENAI_API_KEY` must be added
+to the Vercel project before the deployed app can analyze photos.
+
+### Reasoning-effort evaluation
+
+20 AI-generated field photos of Indian crops (made with Codex, `gpt-6-sol`;
+kept locally in `.local/test-photos`, not committed), each with a known
+problem plus one healthy control, were run through the real analysis code:
+
+| Effort | Correct problem | Failed | Cost (20) | Median / slowest |
+| ------ | --------------- | ------ | --------- | ---------------- |
+| low    | 16/20           | 0      | $0.010    | 7.8 s / 9.7 s    |
+| medium | 17/20           | 0      | $0.012    | 7.2 s / 11 s     |
+| max    | 17/20           | 1      | $0.029    | 22.5 s / 44 s    |
+
+All levels named the crop correctly in 20/20 and reported the healthy plant as
+healthy. Max was not more accurate, cost about three times as much, and once
+ran out of output tokens, so analysis uses medium. Rice bacterial leaf blight
+and maize nitrogen deficiency were read as potassium deficiency, with hedged
+"if a soil test confirms" advice.

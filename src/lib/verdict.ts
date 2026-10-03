@@ -41,13 +41,26 @@ export const STATUS: Record<InspectionStatus, { label: string; tone: Tone }> = {
 };
 
 export const FIELD_LABELS = {
+  disease: "Disease or problem",
+  cause: "Cause",
+  spread_risk: "Can it spread?",
   symptoms: "What we see",
   likely_issue: "Possible problem",
-  treatment: "What to do now",
-  home_remedy: "Home remedy",
+  treatment: "Best fix now",
+  chemical_treatment: "Chemical option",
+  home_remedy: "Natural remedy",
+  safety: "Stay safe",
   prevention: "Stop it coming back",
   expert_help: "When to get help",
 } as const satisfies Partial<Record<keyof CropReport, string>>;
+
+/** Spread risk in plain words. */
+export const SPREAD: Record<NonNullable<CropReport["spread_risk"]>, string> = {
+  Low: "Spreads slowly",
+  Medium: "Can spread",
+  High: "Spreads fast",
+  Unknown: "Not sure",
+};
 
 /** "Possible problem" reads oddly above "No disease seen", so healthy plants get a neutral heading. */
 export function issueLabel(severity: CropReport["severity"]) {
@@ -73,10 +86,14 @@ export function reportSpeech(report: CropReport): string {
   const parts = [
     report.crop,
     SEVERITY[report.severity].label,
+    report.disease && `${FIELD_LABELS.disease}: ${report.disease}`,
     `${issueLabel(report.severity)}: ${report.likely_issue}`,
     `We are ${CONFIDENCE[report.confidence].label.toLowerCase()}`,
     `${FIELD_LABELS.treatment}: ${report.treatment}`,
+    report.chemical_treatment &&
+      `${FIELD_LABELS.chemical_treatment}: ${report.chemical_treatment}`,
     report.home_remedy && `${FIELD_LABELS.home_remedy}: ${report.home_remedy}`,
+    report.safety && `${FIELD_LABELS.safety}: ${report.safety}`,
     `${FIELD_LABELS.prevention}: ${report.prevention}`,
     report.expert_help && `${FIELD_LABELS.expert_help}: ${report.expert_help}`,
     REPORT_CAVEAT,

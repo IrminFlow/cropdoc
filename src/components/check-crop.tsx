@@ -249,8 +249,8 @@ export function CheckCrop() {
           {!starting && (
             <div className={styles.submit}>
               <p className={styles.submitNote}>
-                OpenRouter and AtlasCloud check your photos. Upload crop-only
-                photos without people or personal details.
+                OpenAI checks your photos. Upload crop-only photos without
+                people or personal details.
               </p>
               <button
                 type="button"

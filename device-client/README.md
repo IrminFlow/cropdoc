@@ -80,13 +80,13 @@ If your platform has no OpenCV wheel, install the operating system's OpenCV pack
 
 ## Retries, resuming, and privacy
 
-OpenRouter and AtlasCloud check your photos. Upload crop-only photos without people or personal details.
+OpenAI checks your photos. Upload crop-only photos without people or personal details.
 
 - **Retries:** network errors, server errors, and "server busy" answers are retried up to three times, with growing waits. Change the count with `--retries`. The uploader stops at once for:
   - invalid tokens;
   - secure-connection (certificate) problems, which often mean the device's date and time are wrong;
   - unreadable photos;
-  - a used-up daily limit or Google free-tier quota (`AI_QUOTA`).
+  - a used-up daily limit (`DAILY_QUOTA`), the app's spending cap (`BUDGET_EXHAUSTED`), or an OpenAI limit (`AI_QUOTA`).
 - **Redirects:** the uploader never follows a redirect, so the token cannot be sent anywhere else. If the app URL redirects, update the app URL.
 - **Upload history:** kept in `~/.local/state/cropdoc/uploads.json` (or under `$XDG_STATE_HOME/cropdoc/`). Only your user can read it. It stores a request key for every submission. After any failure, rerun the same command: it continues where it stopped, skips finished photos, and avoids duplicate checks. Don't delete this file while uploads are unfinished.
 - **What counts as a new submission:** a submission is identified by the app URL, the token, the photos, and `--crop`/`--location`/`--notes`. Changing any of these makes it a new submission.
@@ -94,7 +94,7 @@ OpenRouter and AtlasCloud check your photos. Upload crop-only photos without peo
 - **Don't run two uploads at once** with the same history file, for example from overlapping scheduled (cron) jobs. To run uploaders side by side, give each its own `--state` file.
 - **Revoking a token:** revoking the token in the web app blocks this device immediately. Photo links inside a report expire after five minutes.
 
-These limits are shared with the web app: five analyses per account per India-calendar day, and the Google project’s free-tier quota. No paid fallback is used.
+These limits are shared with the web app: five analyses per account per India-calendar day, and the app's shared spending cap. No fallback model is used.
 
 Exit codes:
 
