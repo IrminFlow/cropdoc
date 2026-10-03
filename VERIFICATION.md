@@ -107,3 +107,21 @@ Older saved reports still open.
 
 Not yet verified: deployed end-to-end use. `OPENAI_API_KEY` must be added
 to the Vercel project before the deployed app can analyze photos.
+
+### Reasoning-effort evaluation
+
+20 AI-generated field photos of Indian crops (made with Codex, `gpt-6-sol`;
+kept locally in `.local/test-photos`, not committed), each with a known
+problem plus one healthy control, were run through the real analysis code:
+
+| Effort | Correct problem | Failed | Cost (20) | Median / slowest |
+| ------ | --------------- | ------ | --------- | ---------------- |
+| low    | 16/20           | 0      | $0.010    | 7.8 s / 9.7 s    |
+| medium | 17/20           | 0      | $0.012    | 7.2 s / 11 s     |
+| max    | 17/20           | 1      | $0.029    | 22.5 s / 44 s    |
+
+All levels named the crop correctly in 20/20 and reported the healthy plant as
+healthy. Max was not more accurate, cost about three times as much, and once
+ran out of output tokens, so analysis uses medium. Rice bacterial leaf blight
+and maize nitrogen deficiency were read as potassium deficiency, with hedged
+"if a soil test confirms" advice.

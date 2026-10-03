@@ -52,7 +52,7 @@ export async function analyzePhotos(
     response = await openai.responses.parse({
       model: OPENAI_MODEL,
       store: false,
-      reasoning: { effort: "low" },
+      reasoning: { effort: "medium" },
       max_output_tokens: 4000,
       input: [
         { role: "system", content: REPORT_PROMPT },
