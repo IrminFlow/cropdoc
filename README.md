@@ -82,18 +82,18 @@ Before submission and in device setup, users see: **“OpenRouter and AtlasCloud
 
 ## API
 
-| Endpoint | Authentication | Purpose |
-| --- | --- | --- |
-| `POST /api/inspections` | Clerk | Multipart upload: `images`, optional `crop`, `location`, `notes`; required `Idempotency-Key` |
-| `GET /api/inspections?page=0` | Clerk | Newest reports, 20 per page: `{inspections: [{id, status, crop_hint, created_at, image_count, error_message, report, thumbnail_url}]}`. `report` is the saved report or `null`; `thumbnail_url` is a five-minute signed URL of the first photo, or `null` if it is unavailable |
-| `GET /api/usage` | Clerk | Checks used today (India calendar day): `{used, limit}` |
-| `GET/DELETE /api/inspections/:id` | Clerk | Own report or deletion |
-| `POST /api/inspections/:id/analyze?retry=1` | Clerk | Analysis; explicit retry for failed/stale attempts |
-| `GET/POST /api/devices` | Clerk | List token metadata or create a token with JSON `{name}` |
-| `DELETE /api/devices/:id` | Clerk | Revoke a token |
-| `POST /api/device/upload` | Bearer device token | Same multipart upload, followed by analysis |
-| `GET/POST /api/device/inspections/:id` | Same device token | Status/report or explicit analysis retry |
-| `POST /api/webhooks/clerk` | Verified webhook signature | Account-deletion cleanup |
+| Endpoint                                    | Authentication             | Purpose                                                                                                                                                                                                                                                                        |
+| ------------------------------------------- | -------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `POST /api/inspections`                     | Clerk                      | Multipart upload: `images`, optional `crop`, `location`, `notes`; required `Idempotency-Key`                                                                                                                                                                                   |
+| `GET /api/inspections?page=0`               | Clerk                      | Newest reports, 20 per page: `{inspections: [{id, status, crop_hint, created_at, image_count, error_message, report, thumbnail_url}]}`. `report` is the saved report or `null`; `thumbnail_url` is a five-minute signed URL of the first photo, or `null` if it is unavailable |
+| `GET /api/usage`                            | Clerk                      | Checks used today (India calendar day): `{used, limit}`                                                                                                                                                                                                                        |
+| `GET/DELETE /api/inspections/:id`           | Clerk                      | Own report or deletion                                                                                                                                                                                                                                                         |
+| `POST /api/inspections/:id/analyze?retry=1` | Clerk                      | Analysis; explicit retry for failed/stale attempts                                                                                                                                                                                                                             |
+| `GET/POST /api/devices`                     | Clerk                      | List token metadata or create a token with JSON `{name}`                                                                                                                                                                                                                       |
+| `DELETE /api/devices/:id`                   | Clerk                      | Revoke a token                                                                                                                                                                                                                                                                 |
+| `POST /api/device/upload`                   | Bearer device token        | Same multipart upload, followed by analysis                                                                                                                                                                                                                                    |
+| `GET/POST /api/device/inspections/:id`      | Same device token          | Status/report or explicit analysis retry                                                                                                                                                                                                                                       |
+| `POST /api/webhooks/clerk`                  | Verified webhook signature | Account-deletion cleanup                                                                                                                                                                                                                                                       |
 
 Errors use `{error: {code, message}}`. Daily/provider/storage limits return 429; invalid/revoked tokens return 401; inaccessible reports return 404. Retry transport failures and transient 5xx with bounded backoff; stop on permanent errors or provider quota exhaustion. Never follow an API redirect with a device credential.
 

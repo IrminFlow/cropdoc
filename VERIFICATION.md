@@ -65,6 +65,7 @@ https://cropdoc-lilac.vercel.app explicitly assigned to that deployment;
 `/api/health` returns HTTP 200 with `configured:true`. GitHub CI passed.
 
 Against the public URL:
+
 - Two real leaf photos produced one validated, saved report. A second Clerk
   session for the owner reopened the identical report.
 - Another real Clerk user was denied API, database and private image access.

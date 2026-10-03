@@ -41,18 +41,18 @@ Open the link while signed in to the CropDoc account that created the token.
 - **Problems:** they are printed as `Error: …` together with what to do next.
 - **Retries:** a retry shows a line like `Network error. Check the internet connection. Trying again in 2s…`.
 
-| Option | What it does |
-| --- | --- |
-| `PATH` | A photo, or a folder of photos. Subfolders and hidden files are skipped. |
-| `--group` | Combine up to four photos of the **same plant** into one report |
-| `--crop`, `--location`, `--notes` | Optional details, up to 80, 120 and 500 characters (emoji count as two) |
-| `--json` | Also print the report as JSON |
-| `--camera [INDEX]` | Take the photo with a USB camera (default camera 0) |
-| `--retry-failed` | Ask for one more analysis after a failed one. This uses one of today's attempts. |
-| `--retries N` | Retries after network or server errors, 0–5 (default 3) |
-| `--app-url URL` | Use this app URL instead of the saved one |
-| `--config FILE`, `--state FILE` | Use a different settings file or upload-history file |
-| `--configure` | Save the app URL and device token |
+| Option                            | What it does                                                                     |
+| --------------------------------- | -------------------------------------------------------------------------------- |
+| `PATH`                            | A photo, or a folder of photos. Subfolders and hidden files are skipped.         |
+| `--group`                         | Combine up to four photos of the **same plant** into one report                  |
+| `--crop`, `--location`, `--notes` | Optional details, up to 80, 120 and 500 characters (emoji count as two)          |
+| `--json`                          | Also print the report as JSON                                                    |
+| `--camera [INDEX]`                | Take the photo with a USB camera (default camera 0)                              |
+| `--retry-failed`                  | Ask for one more analysis after a failed one. This uses one of today's attempts. |
+| `--retries N`                     | Retries after network or server errors, 0–5 (default 3)                          |
+| `--app-url URL`                   | Use this app URL instead of the saved one                                        |
+| `--config FILE`, `--state FILE`   | Use a different settings file or upload-history file                             |
+| `--configure`                     | Save the app URL and device token                                                |
 
 Supported photos are JPEG (including Android "Ultra HDR" photos), PNG and WebP. Each must be a still image under 20 MB and 40 megapixels. Before sending, each photo is:
 
@@ -98,12 +98,12 @@ These limits are shared with the web app: five analyses per account per India-ca
 
 Exit codes:
 
-| Code | Meaning |
-| --- | --- |
-| `0` | Success |
-| `1` | Failure (message on stderr) |
-| `2` | Wrong command options |
-| `130` | Interrupted |
+| Code  | Meaning                     |
+| ----- | --------------------------- |
+| `0`   | Success                     |
+| `1`   | Failure (message on stderr) |
+| `2`   | Wrong command options       |
+| `130` | Interrupted                 |
 
 A folder upload stops at the first failure; run it again to continue.
 

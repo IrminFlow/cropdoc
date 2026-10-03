@@ -94,8 +94,8 @@ export function Devices() {
             any time.
           </p>
           <p>
-            OpenRouter and AtlasCloud check your photos. Upload
-            crop-only photos without people or personal details.
+            OpenRouter and AtlasCloud check your photos. Upload crop-only photos
+            without people or personal details.
           </p>
           <form className={styles.form} onSubmit={create}>
             <label className="field">
