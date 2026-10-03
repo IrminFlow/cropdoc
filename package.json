@@ -12,28 +12,32 @@
     "test:db": "node --env-file=.env.local scripts/test-db.mjs"
   },
   "dependencies": {
-    "@clerk/nextjs": "7.9.2",
+    "@clerk/nextjs": "7.9.10",
     "@phosphor-icons/react": "2.1.10",
-    "@supabase/supabase-js": "2.116.0",
-    "next": "16.3.4",
+    "@supabase/supabase-js": "2.117.2",
+    "next": "16.3.8",
     "react": "19.3.0",
     "react-dom": "19.3.0",
     "server-only": "0.0.1",
-    "sharp": "0.35.4",
-    "zod": "4.6.1"
+    "sharp": "0.35.5",
+    "zod": "4.6.5"
   },
   "devDependencies": {
     "@types/node": "22.20.2",
     "@types/react": "19.3.0",
     "@types/react-dom": "19.3.0",
     "eslint": "9.39.5",
-    "eslint-config-next": "16.3.4",
-    "prettier": "3.9.6",
+    "eslint-config-next": "16.3.8",
+    "prettier": "3.9.9",
     "typescript": "6.0.3",
-    "vitest": "5.0.0"
+    "vitest": "5.0.3"
   },
   "type": "module",
   "engines": {
     "node": "22.x"
+  },
+  "allowScripts": {
+    "fsevents": false,
+    "unrs-resolver": false
   }
 }
