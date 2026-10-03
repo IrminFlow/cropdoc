@@ -3,6 +3,7 @@ import { dateLabel, randomKey } from "@/lib/client";
 import type { CropReport } from "@/lib/report";
 import { CONFIDENCE, SEVERITY, reportSpeech } from "@/lib/verdict";
 
+// An older saved report, without the newer optional fields.
 const report: CropReport = {
   crop: "Tomato",
   symptoms: "Brown spots with yellow rings on lower leaves.",
@@ -31,7 +32,7 @@ describe("plain-language report wording", () => {
     const speech = reportSpeech(report);
     expect(speech).toBe(
       "Tomato. Medium problem. Possible problem: Early blight, a leaf disease caused by a fungus. " +
-        "We are fairly sure. What to do now: Remove the spotted leaves and keep leaves dry. " +
+        "We are fairly sure. Best fix now: Remove the spotted leaves and keep leaves dry. " +
         "Stop it coming back: Water the soil, not the leaves. " +
         "CropDoc can be wrong. For a serious problem, ask a local farm expert.",
     );
@@ -54,11 +55,36 @@ describe("plain-language report wording", () => {
       expert_help: "Call an expert if it spreads to the fruit.",
     });
     expect(speech).toContain(
-      "Home remedy: Spray diluted neem oil in the evening.",
+      "Natural remedy: Spray diluted neem oil in the evening.",
     );
     expect(speech).toContain(
       "When to get help: Call an expert if it spreads to the fruit.",
     );
+  });
+});
+
+describe("full reports", () => {
+  it("reads the disease, chemical option and safety steps in order", () => {
+    const speech = reportSpeech({
+      ...report,
+      disease: "Early blight",
+      cause: "Fungus",
+      spread_risk: "Medium",
+      chemical_treatment: "Spray mancozeb. Use the dose on the label",
+      home_remedy: "Spray neem oil",
+      safety: "Wear gloves and a mask",
+    });
+    const order = [
+      "Disease or problem: Early blight.",
+      "Possible problem:",
+      "Best fix now:",
+      "Chemical option: Spray mancozeb. Use the dose on the label.",
+      "Natural remedy: Spray neem oil.",
+      "Stay safe: Wear gloves and a mask.",
+      "Stop it coming back:",
+    ].map((part) => speech.indexOf(part));
+    expect(order).not.toContain(-1);
+    expect(order).toEqual([...order].sort((a, b) => a - b));
   });
 });
 

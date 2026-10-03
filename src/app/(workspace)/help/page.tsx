@@ -56,7 +56,7 @@ const EXAMPLES: { photo: StaticImageData; good: boolean; label: string }[] = [
 
 const FACTS = [
   `You can get ${DAILY_CHECKS} reports each day.`,
-  "Other CropDoc users cannot see your photos or reports. OpenRouter and AtlasCloud check your photos. Upload crop-only photos without people or personal details.",
+  "Other CropDoc users cannot see your photos or reports. OpenAI checks your photos. Upload crop-only photos without people or personal details.",
   "You can delete a report at any time.",
   REPORT_CAVEAT,
 ];

@@ -11,6 +11,7 @@ import {
   CircleNotch,
   CloudSlash,
   Eye,
+  Flask,
   Images,
   Leaf,
   ListChecks,
@@ -19,6 +20,7 @@ import {
   Scan,
   ShieldCheck,
   Trash,
+  Warning,
 } from "@phosphor-icons/react/ssr";
 import type { Icon } from "@phosphor-icons/react";
 import { api, dateLabel } from "@/lib/client";
@@ -30,6 +32,7 @@ import {
   KISAN_HELPLINE,
   REPORT_CAVEAT,
   SEVERITY,
+  SPREAD,
   issueLabel,
   reportSpeech,
 } from "@/lib/verdict";
@@ -321,8 +324,27 @@ function ReportBody({
         <SeverityMeter severity={report.severity} animate />
         <div>
           <h2 className={styles.label}>{issueLabel(report.severity)}</h2>
-          <p className={styles.issue}>{report.likely_issue}</p>
+          {report.disease ? (
+            <>
+              <p className={styles.issue}>{report.disease}</p>
+              <p className={styles.explain}>{report.likely_issue}</p>
+            </>
+          ) : (
+            <p className={styles.issue}>{report.likely_issue}</p>
+          )}
         </div>
+        {(report.cause || report.spread_risk) && (
+          <ul className={styles.tags}>
+            {report.cause && report.cause !== "None" && (
+              <li>
+                {FIELD_LABELS.cause}: {report.cause}
+              </li>
+            )}
+            {report.spread_risk && report.severity !== "None" && (
+              <li>{SPREAD[report.spread_risk]}</li>
+            )}
+          </ul>
+        )}
         <div className={styles.verdictFoot}>
           <ConfidenceDots confidence={report.confidence} />
           <ListenButton text={reportSpeech(report)} label="Listen to report" />
@@ -342,7 +364,13 @@ function ReportBody({
         <p>{report.treatment}</p>
       </section>
       <dl className={`${styles.facts} rise`} style={order(3)}>
-        <Fact icon={Eye} label={FIELD_LABELS.symptoms} text={report.symptoms} />
+        {report.chemical_treatment && (
+          <Fact
+            icon={Flask}
+            label={FIELD_LABELS.chemical_treatment}
+            text={report.chemical_treatment}
+          />
+        )}
         {report.home_remedy && (
           <Fact
             icon={Leaf}
@@ -350,6 +378,14 @@ function ReportBody({
             text={report.home_remedy}
           />
         )}
+        {report.safety && (
+          <Fact
+            icon={Warning}
+            label={FIELD_LABELS.safety}
+            text={report.safety}
+          />
+        )}
+        <Fact icon={Eye} label={FIELD_LABELS.symptoms} text={report.symptoms} />
         <Fact
           icon={ShieldCheck}
           label={FIELD_LABELS.prevention}

@@ -168,6 +168,28 @@
   line-height: 1.25;
   letter-spacing: -0.01em;
 }
+.explain {
+  margin-top: 6px;
+  color: var(--ink-2);
+  font-size: 1.05rem;
+  line-height: 1.45;
+}
+.tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.tags li {
+  padding: 4px 12px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--tone) 14%, transparent);
+  color: var(--ink);
+  font-size: 0.95rem;
+  font-weight: 600;
+}
 .verdictFoot {
   display: flex;
   flex-wrap: wrap;

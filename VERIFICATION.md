@@ -85,3 +85,25 @@ still uses development credentials for the demo. Free-provider capacity is limit
 Deployment note: `cropdoc-lilac.vercel.app` is a manually assigned alias. After
 future production deployments, explicitly update this alias and verify its health
 endpoint; a Ready Git deployment alone did not update this particular alias.
+
+## OpenAI GPT-6 Luna — 3 October 2026
+
+Analysis now uses only `gpt-6-luna` through the official `openai` SDK
+(Responses API, strict structured output, `store: false`, no retries or
+fallback model). Reports add disease name, cause, spread risk, a generic
+chemical option with label-dose wording, a natural remedy and safety steps.
+Older saved reports still open.
+
+- Paused Supabase project restored. Migration `202610030001` applied:
+  each attempt reserves $0.05 and settles to its real token cost under a
+  $5 hard cap (input $0.10 / output $0.50 per million tokens).
+- Hosted RLS/Storage isolation plus cap enforcement, reservation and
+  real-cost settlement passed (rolled back; no rows left).
+- Live `gpt-6-luna` calls on repo photos produced validated reports in
+  4–7 seconds for $0.0003–0.0005 each: a confident fungal leaf spot got a
+  copper oxychloride option with safety steps; blurry and unclear photos
+  got "Not sure" with no chemical.
+- Lint, TypeScript, 67 app tests, 30 Python tests and a production build pass.
+
+Not yet verified: deployed end-to-end use. `OPENAI_API_KEY` must be added
+to the Vercel project before the deployed app can analyze photos.

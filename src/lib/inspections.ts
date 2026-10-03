@@ -1,13 +1,18 @@
 import "server-only";
 import { createHash } from "node:crypto";
-import { analyzePhotos, openrouterKey, AI_QUOTA_MESSAGE } from "./openrouter";
+import {
+  analyzePhotos,
+  openaiKey,
+  AnalysisError,
+  AI_QUOTA_MESSAGE,
+} from "./openai";
 import { z } from "zod";
 import { adminDb } from "./supabase";
 import type { Identity } from "./auth";
 import { AppError, databaseError } from "./errors";
 import { limitedForm, optimizeImage } from "./images";
 import { DAILY_CHECKS, MAX_PHOTOS, REPORTS_PAGE_SIZE } from "./limits";
-import { reportSchema, validateReport } from "./report";
+import { storedReportSchema, validateStoredReport } from "./report";
 import type {
   DailyUsage,
   Inspection,
@@ -71,7 +76,7 @@ export async function inspectionView(
   return {
     ...item,
     images: images.filter((image) => image !== null),
-    report: r.data ? validateReport(r.data.report) : null,
+    report: r.data ? validateStoredReport(r.data.report) : null,
     lease_active: new Date(item.lease_until ?? 0).getTime() > Date.now(),
     retryable:
       item.status === "failed" ||
@@ -90,7 +95,7 @@ type SummaryRow = Omit<InspectionSummary, "report" | "thumbnail_url"> & {
 function storedReport(embedded: SummaryRow["analysis_reports"]) {
   const row = Array.isArray(embedded) ? embedded[0] : embedded;
   // One unreadable stored report must not break the whole history page.
-  const parsed = reportSchema.safeParse(row?.report);
+  const parsed = storedReportSchema.safeParse(row?.report);
   return parsed.success ? parsed.data : null;
 }
 function firstPhotoPath(images: SummaryRow["inspection_images"]) {
@@ -263,9 +268,9 @@ export async function analyzeInspection(
   retry = false,
 ) {
   await getInspection(identity, id);
-  const apiKey = openrouterKey();
+  const apiKey = openaiKey();
   const db = adminDb();
-  const { data: claim, error } = await db.rpc("claim_free_analysis", {
+  const { data: claim, error } = await db.rpc("claim_openai_analysis", {
     p_owner: identity.owner,
     p_id: id,
     p_retry: retry,
@@ -275,6 +280,8 @@ export async function analyzeInspection(
   const attempt = claim.attempt_id as string;
   let errorCode = "ANALYSIS_FAILED";
   let report = null;
+  // Null keeps the full reservation charged when the real cost is unknown.
+  let cost: number | null = null;
   let message: string | null = null;
   try {
     const item = await getInspection(identity, id);
@@ -294,8 +301,14 @@ export async function analyzeInspection(
         return Buffer.from(await data!.arrayBuffer()).toString("base64");
       }),
     );
-    report = await analyzePhotos(apiKey, urls, item.crop_hint, item.notes);
+    ({ report, cost } = await analyzePhotos(
+      apiKey,
+      urls,
+      item.crop_hint,
+      item.notes,
+    ));
   } catch (error) {
+    if (error instanceof AnalysisError) cost = error.cost;
     if (error instanceof AppError && error.code === "AI_QUOTA")
       errorCode = "AI_QUOTA";
     message =
@@ -311,12 +324,13 @@ export async function analyzeInspection(
     );
   }
   const { data: finished, error: finishError } = await db.rpc(
-    "finish_free_analysis",
+    "finish_openai_analysis",
     {
       p_owner: identity.owner,
       p_id: id,
       p_attempt: attempt,
       p_report: report,
+      p_cost: cost,
       p_error_code: errorCode,
       p_error: message,
     },

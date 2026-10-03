@@ -53,7 +53,7 @@ try {
   }
   const results = await Promise.all(
     ids.map((id) =>
-      db.rpc("claim_free_analysis", {
+      db.rpc("claim_openai_analysis", {
         p_owner: owner,
         p_id: id,
         p_retry: false,
@@ -72,15 +72,15 @@ try {
   check(attempts.error);
   assert.equal(attempts.data.length, 5);
   for (const attempt of attempts.data) {
-    assert.equal(attempt.provider, "openrouter");
-    assert.equal(attempt.model, "dots-studio/dots-3-note-preview:free");
-    assert.equal(attempt.charged_microusd, 0);
+    assert.equal(attempt.provider, "openai");
+    assert.equal(attempt.model, "gpt-6-luna");
+    assert.equal(attempt.charged_microusd, 50000);
   }
   assert.equal(
     results.filter((r) => r.error?.message.includes("DAILY_QUOTA")).length,
     1,
   );
-  const duplicate = await db.rpc("claim_free_analysis", {
+  const duplicate = await db.rpc("claim_openai_analysis", {
     p_owner: owner,
     p_id: claims[0].id,
     p_retry: false,
@@ -120,7 +120,7 @@ try {
   for (const c of claims)
     check(
       (
-        await db.rpc("finish_free_analysis", {
+        await db.rpc("finish_openai_analysis", {
           p_owner: owner,
           p_id: c.id,
           p_attempt: c.attempt,

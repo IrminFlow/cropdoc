@@ -13,14 +13,12 @@ vi.mock("@/lib/supabase", () => ({
   }),
   env: () => "test-only-key",
 }));
-vi.mock("@/lib/openrouter", async () => {
+vi.mock("@/lib/openai", async () => {
   const actual =
-    await vi.importActual<typeof import("@/lib/openrouter")>(
-      "@/lib/openrouter",
-    );
+    await vi.importActual<typeof import("@/lib/openai")>("@/lib/openai");
   return {
     ...actual,
-    openrouterKey: () => "test-only-key",
+    openaiKey: () => "test-only-key",
     analyzePhotos: mocks.parse,
   };
 });
@@ -64,7 +62,7 @@ const identity = {
 beforeEach(() => {
   vi.clearAllMocks();
   mocks.rpc.mockImplementation(async (name: string) =>
-    name === "claim_free_analysis"
+    name === "claim_openai_analysis"
       ? { data: { acquired: true, attempt_id: "attempt" }, error: null }
       : { data: true, error: null },
   );
@@ -126,8 +124,8 @@ describe("analysis lifecycle", () => {
     expect(view.status).toBe("uploading");
     expect(view.lease_active).toBe(false);
   });
-  it("saves validated output and excludes location and account identifiers", async () => {
-    mocks.parse.mockResolvedValue(report);
+  it("saves validated output and its real cost, excluding location and account identifiers", async () => {
+    mocks.parse.mockResolvedValue({ report, cost: 550 });
     await analyzeInspection(identity, id);
     expect(mocks.parse).toHaveBeenCalledWith(
       "test-only-key",
@@ -136,35 +134,41 @@ describe("analysis lifecycle", () => {
       "",
     );
     expect(mocks.rpc).toHaveBeenCalledWith(
-      "finish_free_analysis",
-      expect.objectContaining({ p_report: report }),
+      "finish_openai_analysis",
+      expect.objectContaining({ p_report: report, p_cost: 550 }),
     );
-    expect(mocks.rpc.mock.calls.at(-1)?.[1]).not.toHaveProperty("p_cost");
   });
-  it("saves recoverable failure when provider outcome is unknown", async () => {
+  it("keeps the full reservation when the provider outcome is unknown", async () => {
     mocks.parse.mockRejectedValue(new Error("timeout"));
     await analyzeInspection(identity, id);
     expect(mocks.rpc).toHaveBeenCalledWith(
-      "finish_free_analysis",
+      "finish_openai_analysis",
       expect.objectContaining({
         p_report: null,
+        p_cost: null,
         p_error_code: "ANALYSIS_FAILED",
       }),
     );
   });
   it("persists quota failure before returning AI_QUOTA", async () => {
-    const { AppError } = await import("@/lib/errors");
-    mocks.parse.mockRejectedValue(new AppError("AI_QUOTA", "Try later", 429));
+    const { AnalysisError } = await import("@/lib/openai");
+    mocks.parse.mockRejectedValue(
+      new AnalysisError("AI_QUOTA", "Try later", 429, 0),
+    );
     await expect(analyzeInspection(identity, id)).rejects.toMatchObject({
       code: "AI_QUOTA",
       status: 429,
     });
     expect(mocks.rpc).toHaveBeenCalledWith(
-      "finish_free_analysis",
-      expect.objectContaining({ p_report: null, p_error_code: "AI_QUOTA" }),
+      "finish_openai_analysis",
+      expect.objectContaining({
+        p_report: null,
+        p_cost: 0,
+        p_error_code: "AI_QUOTA",
+      }),
     );
   });
-  it("does not call Google when daily quota admission fails", async () => {
+  it("does not call OpenAI when daily quota admission fails", async () => {
     mocks.rpc.mockResolvedValue({
       data: null,
       error: { message: "DAILY_QUOTA" },

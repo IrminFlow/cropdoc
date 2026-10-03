@@ -5,12 +5,10 @@ export async function GET() {
       "CLERK_SECRET_KEY",
       "NEXT_PUBLIC_SUPABASE_URL",
       "SUPABASE_SERVICE_ROLE_KEY",
-      "OPENROUTER_API_KEY",
+      "OPENAI_API_KEY",
       "CLERK_WEBHOOK_SIGNING_SECRET",
     ].every((k) => Boolean(process.env[k])) &&
-    process.env.OPENROUTER_FREE_TIER_VERIFIED === "true" &&
-    (!process.env.OPENROUTER_MODEL ||
-      process.env.OPENROUTER_MODEL === "dots-studio/dots-3-note-preview:free");
+    (!process.env.OPENAI_MODEL || process.env.OPENAI_MODEL === "gpt-6-luna");
   return Response.json(
     { service: "cropdoc", configured },
     { status: configured ? 200 : 503 },
